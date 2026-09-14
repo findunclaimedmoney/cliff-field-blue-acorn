@@ -1,1 +1,0 @@
-{"ok":true,"service":"lensflow-heymia","deployedAt":"2026-09-13T00:50:36.130Z","workerVersion":"2026-07-30-upload-feedback","vault":"bound","vaultProbe":{"ok":true,"sampleKeys":["ui/play-active.html","ui/work-active.html","vault/1786252331517-heymia-upload-test.html"]},"message":"Worker is live. File Vault is ready for uploads."}
