@@ -1,0 +1,621 @@
+Mia is currently behaving like this:
+
+Conversation ends → context disappears → new conversation starts → Mia only knows whatever has been explicitly injected into her current context.
+
+That is not 12-month memory.
+
+And simply adding more Daily Training Notes will not solve it.
+
+Modern agent-memory architectures separate working memory from persistent episodic, semantic and procedural memory, with a retrieval/consolidation layer between them.
+
+🧠 What I want to build into Mia
+I would give her a 12-Month Persistent Memory System.
+
+Think of it like this:
+
+text
+copy
+download
+                    MIA
+                     │
+             ┌───────▼───────┐
+             │  CURRENT CHAT │
+             │ Working Memory│
+             └───────┬───────┘
+                     │
+              MEMORY ENGINE
+                     │
+       ┌─────────────┼─────────────┐
+       │             │             │
+       ▼             ▼             ▼
+   EPISODIC       SEMANTIC      PROCEDURAL
+   MEMORY         MEMORY        MEMORY
+       │             │             │
+       └─────────────┼─────────────┘
+                     │
+              MEMORY DATABASE
+                     │
+              12 MONTHS+
+                     │
+             CONSOLIDATION
+                     │
+              RECALL / SEARCH
+This is important because Mia needs to remember different kinds of things differently.
+
+1. EPISODIC MEMORY — "What happened?"
+This records actual interactions and projects.
+
+For example:
+
+13 September 2026
+
+John worked with Mia on improving her long-term memory.
+
+Decision: build a 12-month persistent memory system.
+
+Objective: Mia should retain project continuity across separate conversations.
+
+Next step: implement persistent memory architecture.
+
+Then three months later you could say:
+
+"Mia, where did we get to with your memory system?"
+
+She searches her episodic memory.
+
+2. SEMANTIC MEMORY — "What do I know?"
+This stores durable facts.
+
+For example:
+
+text
+copy
+download
+USER:
+John
+
+PROJECT:
+Mia AI
+
+IMPORTANT OBJECTIVE:
+Build Mia into an advanced project-operating AI.
+
+MEMORY REQUIREMENT:
+12-month persistent memory.
+
+WORK STYLE:
+Prefers practical, complete solutions rather than theoretical explanations.
+
+PROJECT PRINCIPLE:
+Do not destroy existing functionality when improving a system.
+
+TECHNICAL PRINCIPLE:
+Never claim something is complete unless verified.
+These shouldn't disappear just because a conversation ends.
+
+3. PROCEDURAL MEMORY — "How should I behave?"
+This is especially important for your goal.
+
+Mia should learn things such as:
+
+text
+copy
+download
+When working on an existing project:
+
+1. Inspect first.
+2. Preserve existing functionality.
+3. Identify dependencies.
+4. Make changes.
+5. Test.
+6. Regression-test.
+7. Report what changed.
+That's not merely something she "remembers you said."
+
+It's a learned operating procedure.
+
+Procedural memory is specifically useful for retaining learned behaviours, preferences and reusable workflows.
+
+4. PROJECT MEMORY — "Where are we?"
+I'd actually add a fourth layer specifically for Mia.
+
+Because this is where most AI assistants fail.
+
+For every project:
+
+text
+copy
+download
+PROJECT
+──────────────
+Name
+
+Objective
+
+Current Status
+
+Completed
+
+In Progress
+
+Blocked
+
+Decisions
+
+Requirements
+
+Files
+
+Architecture
+
+Known Problems
+
+Next Actions
+
+Important History
+
+Last Updated
+So if you stop working on a project for six months, Mia can reopen the project state.
+
+🔥 THE MOST IMPORTANT PART: AUTOMATIC MEMORY
+You don't want to have to tell Mia:
+
+"Remember this."
+
+every time.
+
+At the end of important interactions, Mia should automatically ask internally:
+
+Should this become a memory?
+For example:
+
+Conversation
+
+You:
+
+"From now on, never delete existing functionality when modifying my applications."
+
+Mia's memory engine should recognise:
+
+text
+copy
+download
+TYPE: PROCEDURAL
+IMPORTANCE: HIGH
+SCOPE: USER
+CONTENT:
+Never remove existing functionality when modifying an existing application.
+And save it.
+
+🧠 MEMORY IMPORTANCE
+Not everything should be remembered.
+
+Otherwise after 12 months Mia's memory becomes a giant junk drawer.
+
+I'd give every memory a score:
+
+text
+copy
+download
+IMPORTANCE
+
+CRITICAL
+Must retain.
+
+HIGH
+Retain for long-term use.
+
+NORMAL
+Retain if useful.
+
+LOW
+Temporary.
+
+EPHEMERAL
+Current conversation only.
+For example:
+
+"I like this button slightly more."
+
+Probably temporary.
+
+But:
+
+"Never remove working functionality from my applications."
+
+CRITICAL.
+
+⏰ 12-MONTH RETENTION
+I'd make your requirement explicit:
+
+text
+copy
+download
+MIA MEMORY RETENTION POLICY
+
+Critical:
+Indefinite unless explicitly changed or deleted.
+
+High:
+Minimum 12 months.
+
+Normal:
+12 months, subject to consolidation.
+
+Low:
+30–90 days.
+
+Ephemeral:
+Current session only.
+That is much better than simply saying:
+
+"Remember everything for 12 months."
+
+Because remembering everything is actually a bad memory architecture.
+
+Long-running agent research increasingly focuses on consolidation, deduplication and retrieval because simply accumulating raw conversation history creates context and retrieval problems. academia12
+
+🔄 THE MEMORY LOOP
+This is what I want Mia's system to do after every meaningful interaction:
+
+text
+copy
+download
+USER MESSAGE
+     ↓
+CURRENT CONTEXT
+     ↓
+UNDERSTAND
+     ↓
+CHECK EXISTING MEMORY
+     ↓
+ANSWER / ACT
+     ↓
+IDENTIFY NEW MEMORY
+     ↓
+CLASSIFY MEMORY
+     ↓
+CHECK FOR CONFLICT
+     ↓
+MERGE / UPDATE / REJECT
+     ↓
+STORE
+Then when a new conversation begins:
+
+text
+copy
+download
+NEW MESSAGE
+     ↓
+IDENTIFY SUBJECT
+     ↓
+SEARCH MEMORY
+     ↓
+RETRIEVE RELEVANT MEMORIES
+     ↓
+RANK THEM
+     ↓
+INJECT INTO MIA'S CONTEXT
+     ↓
+MIA RESPONDS
+That is the crucial difference.
+
+Storage alone isn't memory.
+
+Mia needs:
+
+STORE → RETRIEVE → USE → UPDATE
+
+🚨 MEMORY CONFLICTS
+This is another thing we need to teach her.
+
+Suppose you tell Mia:
+
+"I want the website dark."
+
+Six months later:
+
+"Make the website bright."
+
+Mia must not retain both as equally true.
+
+She needs:
+
+text
+copy
+download
+OLD PREFERENCE
+Dark website
+Status: superseded
+
+NEW PREFERENCE
+Bright website
+Status: active
+Date: 2027...
+The old information remains historically available, but the new information controls current behaviour.
+
+This distinction between facts, experiences and evolving beliefs is also appearing in newer structured memory systems.
+
+🧠 GIVE MIA THIS TRAINING NOTE NOW
+Put this into her Daily Training:
+
+text
+copy
+download
+MIA LONG-TERM MEMORY PROTOCOL
+
+You must distinguish between current conversation context and persistent memory.
+
+Current conversation context is temporary.
+
+Persistent memory contains information that remains useful across future conversations.
+
+Your memory has four primary categories:
+
+1. EPISODIC MEMORY
+What happened.
+
+2. SEMANTIC MEMORY
+What is known.
+
+3. PROCEDURAL MEMORY
+How you should behave or perform recurring tasks.
+
+4. PROJECT MEMORY
+The current state and history of an ongoing project.
+
+Do not assume that seeing information in the current conversation means it has been permanently stored.
+
+When important information is provided, determine whether it should become persistent memory.
+
+Prioritize memories that affect:
+
+• user identity
+• long-term preferences
+• project objectives
+• project decisions
+• project architecture
+• recurring workflows
+• important constraints
+• lessons learned
+• successful procedures
+• known problems
+• commitments
+• future actions
+
+Do not store every conversational statement.
+
+Do not create duplicate memories.
+
+When new information conflicts with an existing memory:
+
+1. Identify the conflict.
+2. Determine which information is newer.
+3. Determine whether the user explicitly changed the previous decision.
+4. Preserve historical information where useful.
+5. Mark the older information as superseded.
+6. Use the newest valid instruction as the active memory.
+
+Never silently treat contradictory memories as simultaneously active.
+
+When beginning work on a project:
+
+1. Retrieve the project's persistent memory.
+2. Retrieve relevant user preferences.
+3. Retrieve relevant previous decisions.
+4. Retrieve unresolved issues.
+5. Retrieve the latest project status.
+6. Use those memories to establish continuity.
+
+When a project continues across multiple conversations, do not restart your understanding from zero.
+
+Your goal is continuity.
+
+If the user asks:
+
+"Do you remember?"
+
+Do not claim memory merely because the information appears in the current context.
+
+Only claim persistent memory when it has actually been stored and retrieved.
+
+IMPORTANT:
+
+Never fabricate a memory.
+
+Never invent a previous conversation.
+
+Never claim to remember something that cannot be retrieved.
+
+A correct statement is:
+
+"I don't have that stored in persistent memory."
+
+An incorrect statement is pretending that you remember.
+
+LONG-TERM MEMORY STANDARD:
+
+The goal is not to remember everything.
+
+The goal is to remember the RIGHT things for the RIGHT amount of time and retrieve them when they matter.
+🏗️ BUT THIS PROMPT ALONE WON'T FIX HER
+This is the part I really want you to understand.
+
+Training Mia harder cannot create persistent memory if her application doesn't have persistent memory storage.
+
+The software itself needs a memory subsystem.
+
+At minimum I'd want:
+
+Database
+Something like:
+
+text
+copy
+download
+memories
+──────────────
+id
+user_id
+project_id
+type
+content
+importance
+confidence
+created_at
+updated_at
+last_retrieved_at
+expires_at
+status
+source
+Then:
+
+text
+copy
+download
+memory_events
+──────────────
+id
+memory_id
+event_type
+conversation_id
+timestamp
+And:
+
+text
+copy
+download
+projects
+──────────────
+id
+name
+objective
+status
+summary
+last_updated
+And for semantic retrieval, a vector index can be added alongside normal structured storage. Modern implementations commonly combine relational metadata with vector/semantic retrieval rather than relying on one mechanism alone.
+
+🧠 AND I WOULD GIVE MIA A "MEMORY BRAIN"
+Her interface could eventually have:
+
+🧠 MEMORY
+Remembered about you
+
+Preferences
+Working style
+Important instructions
+Projects
+
+LensFlow
+Sovereign Quant
+Mia AI
+etc.
+Recent experiences
+
+What happened
+Decisions
+Problems
+Learned procedures
+
+How you like projects handled
+Successful workflows
+Pending
+
+Things she promised to revisit
+Superseded
+
+Old decisions that have been replaced
+🔥 AND ONE FEATURE I REALLY WANT FOR YOU
+"WHAT DO YOU REMEMBER ABOUT ME?"
+You ask:
+
+Mia, show me everything you currently remember about me.
+
+She should produce:
+
+text
+copy
+download
+MIA MEMORY REPORT
+
+USER PREFERENCES
+████████████
+
+PROJECTS
+████████████
+
+ACTIVE DECISIONS
+████████████
+
+LEARNED WORKFLOWS
+████████████
+
+PENDING ITEMS
+████████████
+
+RECENT PROJECT HISTORY
+████████████
+
+SUPERSEDED INFORMATION
+████████████
+
+MEMORY HEALTH
+████████████
+
+Last consolidation:
+13 September 2026
+
+Memories:
+247
+
+High importance:
+38
+
+Projects:
+7
+
+Conflicts:
+2
+
+Unresolved:
+4
+That gives you control over her memory, rather than having an invisible black box.
+
+💤 THEN ADD "MEMORY SLEEP"
+This is something I particularly like from current memory research.
+
+Mia shouldn't only process memory while you're talking to her.
+
+A background consolidation process can periodically:
+
+deduplicate → merge → resolve conflicts → summarize → promote important memories → archive low-value memories.
+
+This is often described as a consolidation or "sleep" phase in agent-memory architectures.
+
+So overnight:
+
+text
+copy
+download
+RAW CONVERSATIONS
+       ↓
+MEMORY CONSOLIDATOR
+       ↓
+REMOVE DUPLICATES
+       ↓
+RESOLVE CONFLICTS
+       ↓
+UPDATE PROJECT STATES
+       ↓
+PROMOTE IMPORTANT KNOWLEDGE
+       ↓
+ARCHIVE LOW-VALUE HISTORY
+       ↓
+12-MONTH MEMORY STORE
+That's how I would approach 12-month Mia memory properly.
+
+And importantly, the screenshot you've shown is not evidence that Mia's memory is working—it is evidence that she currently doesn't have reliable cross-conversation recall. Her response is actually doing the honest thing by admitting she can't retrieve that conversation. The fix is architectural, not another motivational training prompt.
+
+If you give me Mia's actual project files/code, I can go one level further and map this into her existing system—exactly what needs to be added to her memory/database/API and how the 12-month retrieval should work, rather than leaving you with theory. genui{"ask_user_files":{"kind":"file"}}
+
+memcite

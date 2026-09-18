@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-heymia-ui="4.4.0">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,8 +24,10 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
 .fade-in { animation:fadeIn .3s ease forwards; }
 .resize-handle { width:8px; cursor:col-resize; flex-shrink:0; background:rgba(255,255,255,0.08); position:relative; z-index:20; }
 .resize-handle:hover, .resize-handle.dragging { background:rgba(236,72,153,0.65); }
-#mia-aside, #vault-cats, #vault-preview { min-width:140px; max-width:55vw; }
+#mia-aside, #vault-cats, #vault-preview { min-width:160px; max-width:55vw; }
+#vault-preview { z-index: 15; background: var(--panel); }
 #tool-projects { padding-right: 1.25rem; }
+[id^="tool-"].hidden { display: none !important; }
 </style>
 </head>
 <body class="flex flex-col h-screen">
@@ -45,7 +47,9 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
     <input id="global-search" type="text" placeholder="Search files, scripts, businesses, deployments..." 
       class="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-pink-500/60 transition"
-      oninput="runGlobalSearch(this.value)">
+      oninput="runGlobalSearch(this.value)"
+      onkeydown="globalSearchKey(event)"
+      autocomplete="off">
     <div id="search-results" class="absolute top-full left-0 right-0 mt-1 glass rounded-xl border border-white/10 shadow-2xl max-h-72 overflow-y-auto hidden z-50"></div>
   </div>
 
@@ -141,9 +145,13 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
       <button onclick="switchTool('checklist')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="checklist">Checklist</button>
       <button onclick="switchTool('training')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="training">Daily Training</button>
       <button onclick="switchTool('editor')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="editor">Marketing</button>
+      <button onclick="switchTool('cut')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="cut">Cut</button>
+      <button onclick="switchTool('cinema')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="cinema">Cinema</button>
+      <button onclick="switchTool('clips')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="clips">Clips</button>
       <button onclick="switchTool('replace')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="replace">Find & Replace</button>
       <button onclick="switchTool('deploy')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="deploy">Deploy</button>
       <button onclick="switchTool('sites')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="sites">Sites</button>
+      <button onclick="switchTool('pentad')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="pentad">5D Pentad</button>
       <button onclick="switchTool('dedupe')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="dedupe">Dedupe</button>
       <button onclick="switchTool('api')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="api">API</button>
       <button onclick="switchTool('shell')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="shell">Shell</button>
@@ -158,10 +166,10 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
 
       <div id="tool-projects" class="absolute inset-0 overflow-y-auto overflow-x-hidden p-4">
         <div class="w-full max-w-4xl">
-          <div class="flex items-start justify-between gap-3 mb-4">
-            <div class="min-w-0 pr-2">
-              <h2 class="text-lg font-bold serif">Projects</h2>
-              <p class="text-[11px] text-slate-400">Tap a card to open files. Drag the pink bars to resize panels.</p>
+          <div class="flex flex-col gap-3 mb-4 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0">
+              <h2 class="text-lg font-bold serif leading-tight">Projects</h2>
+              <p class="text-[11px] text-slate-400 mt-1 leading-snug">Tap a card to open files. Drag the pink bars to resize panels.</p>
             </div>
             <button onclick="seedProductsNow()" class="shrink-0 px-3 py-2 rounded-xl bg-pink-600 text-xs font-bold whitespace-nowrap">Refresh folders</button>
           </div>
@@ -171,7 +179,7 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
       </div>
 
       <!-- FILE VAULT -->
-      <div id="tool-vault" class="absolute inset-0 flex">
+      <div id="tool-vault" class="absolute inset-0 hidden flex">
         <div id="vault-cats" class="border-r border-white/10 p-3 overflow-y-auto shrink-0" style="width:14rem">
           <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Projects</div>
           <div id="project-list" class="space-y-1 mb-3"></div>
@@ -183,18 +191,6 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
         <div class="flex-1 flex flex-col min-w-0">
           <div class="px-4 py-2 border-b border-white/10 text-xs font-semibold" id="cat-label">All Files</div>
           <div id="file-grid" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 content-start"></div>
-        </div>
-        <div class="resize-handle" data-resize="preview" title="Drag to resize preview"></div>
-        <div id="vault-preview" class="border-l border-white/10 flex flex-col shrink-0" style="width:20rem">
-          <div class="p-3 border-b border-white/10 text-xs font-bold">Preview & Deploy</div>
-          <div id="preview-area" class="flex-1 flex flex-col min-h-0 p-4 overflow-hidden">
-            <div id="preview-frame" class="w-full flex-1 min-h-[180px] rounded-xl preview-empty border border-white/10 flex items-center justify-center text-slate-500 text-xs mb-3 overflow-hidden">Select a file</div>
-            <div id="prev-meta" class="text-[10px] text-slate-400 w-full space-y-1 hidden shrink-0"></div>
-          </div>
-          <div class="p-3 border-t border-white/10 space-y-2">
-            <button id="btn-deploy" onclick="deploySelected()" disabled class="w-full py-2 rounded-xl bg-emerald-600/80 hover:bg-emerald-500 text-xs font-bold disabled:opacity-40">Publish / Deploy</button>
-            <button id="btn-route" onclick="routeSelected()" disabled class="w-full py-2 rounded-xl glass-light text-xs font-medium disabled:opacity-40">Ask Mia to Route</button>
-          </div>
         </div>
       </div>
 
@@ -259,7 +255,9 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
         <div class="max-w-3xl mx-auto space-y-4">
           <div class="glass rounded-2xl p-5 border border-white/10">
             <h2 class="text-lg font-bold serif mb-1">Daily Training Session for Mia</h2>
-            <p class="text-xs text-slate-400 mb-4">Teach Mia new preferences, brand voice, room scripts or business rules. These notes are injected into every Gemini reply.</p>
+            <p class="text-xs text-slate-400 mb-4">7-day camp + 30-day mastery live in the vault (procedural memory). Notes you add here join that OS so customers do not re-teach her every day.</p>
+            <div id="camp-board" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4 text-[11px]"></div>
+            <div id="mem-report" class="text-[10px] text-slate-500 mb-3"></div>
             <textarea id="training-input" rows="5" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-pink-500 resize-none mb-3" placeholder="Example: Always greet users by name. Prefer short playful answers in The Bedroom. Never mention competitors. New promo code is SUMMER25..."></textarea>
             <div class="flex gap-2">
               <button onclick="saveTraining()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold">Save Training Note</button>
@@ -316,6 +314,15 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
                 <div id="mkt-social-fields" class="grid grid-cols-1 gap-1"></div>
                 <button onclick="mktSaveSocial()" class="w-full py-2 rounded-xl bg-emerald-600 text-xs font-bold">Save social links</button>
                 <div id="mkt-share" class="flex flex-wrap gap-2"></div>
+                <div class="pt-3 border-t border-white/10 space-y-2">
+                  <div class="text-xs font-bold">Mia presses Post — Instagram</div>
+                  <p class="text-[10px] text-slate-500">Professional account only. Cloudflare secrets: <code class="text-pink-300">META_PAGE_TOKEN</code> + <code class="text-pink-300">IG_USER_ID</code>. Use a System User token for Reels.</p>
+                  <div id="ig-status" class="text-[11px] text-slate-400">Checking…</div>
+                  <input id="ig-key" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Vault key — clips/ash-and-altar.mp4">
+                  <textarea id="ig-caption" rows="3" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Caption + hashtags"></textarea>
+                  <button onclick="igPostNow()" class="w-full py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold">Post to Instagram</button>
+                  <div id="ig-job" class="text-[11px] text-slate-400"></div>
+                </div>
               </div>
             </div>
             <div class="space-y-3">
@@ -365,35 +372,125 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
         </div>
       </div>
 
-      <!-- DEPLOY -->
-      <div id="tool-deploy" class="absolute inset-0 hidden p-6 overflow-y-auto">
-        <div id="deploy-result-panel" class="hidden rounded-2xl p-4 mb-4 border text-sm font-bold"></div>
-        <div class="glass rounded-2xl p-5 border border-white/10 mb-4">
-          <div class="flex items-center justify-between gap-3 mb-2">
-            <h2 class="text-sm font-bold">Live build &amp; publish</h2>
-            <button onclick="renderPublish()" class="px-3 py-1.5 rounded-xl glass-light text-[11px] font-bold">Refresh</button>
-          </div>
-          <div id="publish-status" class="text-xs text-slate-400">Loading…</div>
-          <div class="mt-4 pt-4 border-t border-white/10">
-            <h3 class="text-sm font-bold mb-1">Publish an HTML build</h3>
-            <p class="text-xs text-slate-400 mb-3">Upload the .html in File Vault first, then make it live here. Hard refresh (Ctrl+Shift+R) afterwards.</p>
-            <div id="publish-list" class="space-y-2 text-xs max-h-96 overflow-y-auto"></div>
-          </div>
-          <div class="mt-4 pt-4 border-t border-white/10">
-            <h3 class="text-sm font-bold mb-1">Backups &amp; restore points</h3>
-            <p class="text-xs text-slate-400 mb-3">Publishing overwrites the live copy. Save a restore point first — it lands in the vault and appears in the list below, so you can make it live again in one click.</p>
-            <div class="flex gap-2 flex-wrap">
-              <button onclick="backupLivePages()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold">Back up live pages to vault</button>
-              <button onclick="downloadLivePages()" class="px-4 py-2 rounded-xl glass-light text-xs font-bold">Download copies to my computer</button>
+
+
+      <div id="tool-clips" class="absolute inset-0 hidden overflow-y-auto overflow-x-hidden p-4">
+        <div class="max-w-5xl mx-auto pb-16 space-y-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-bold serif leading-tight">Clips</h2>
+              <p class="text-[11px] text-slate-400 mt-1">Mia renders here. Magical 1080p (Grok Imagine Video 1.5, 15s) or native 4K (Veo 3.1, 8s). Files live in <code class="text-pink-300">clips/</code> — play and download.</p>
             </div>
-            <div id="backup-status" class="text-[10px] text-slate-400 mt-2"></div>
+            <div class="flex gap-2 shrink-0">
+              <button onclick="refreshClips()" class="px-3 py-2 rounded-xl glass-light text-xs font-bold">Refresh</button>
+              <button onclick="downloadAllClips()" class="px-3 py-2 rounded-xl bg-emerald-600 text-xs font-bold">Download all</button>
+            </div>
           </div>
+          <div class="glass rounded-2xl p-4 border border-white/10 space-y-2">
+            <div class="text-xs font-bold">Mia creates the clip</div>
+            <input id="clip-title" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" value="Ash and Altar">
+            <textarea id="clip-story" rows="5" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm">A mother gives birth to a dragon and dies shielding her from a priest who names her witch. Years later the dragon returns. She does not burn the square. She lays her mother's iron pendant on the altar and waits until someone says the woman's name without the word witch. Rain. Guardian, not tyrant.</textarea>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="miaMakeClip('1080p')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold">Mia · magical 1080p</button>
+              <button onclick="miaMakeClip('4k')" class="px-4 py-2 rounded-xl glass-light text-xs font-bold">Mia · native 4K (Veo, 8s)</button>
+            </div>
+            <div id="clip-job" class="text-[11px] text-slate-400">Grok Imagine max is 1080p. 4K is Veo only — we do not fake 4K by stretching.</div>
+          </div>
+          <div id="clips-drop" class="drop-zone border-2 border-dashed border-pink-500/30 rounded-2xl p-6 text-center cursor-pointer hover:border-pink-500">
+            <p class="text-sm font-bold">Drop clips here</p>
+            <p class="text-[11px] text-slate-400 mt-1">MP4, MOV, WEBM — they land in clips/ and stay until you delete them.</p>
+            <input id="clips-input" type="file" accept="video/*,.mp4,.mov,.webm,.m4v" multiple class="hidden">
+          </div>
+          <div id="clips-status" class="text-[11px] text-slate-400"></div>
+          <div id="clips-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
         </div>
-        <div class="glass rounded-2xl p-5 border border-white/10 mb-4">
-          <h2 class="text-sm font-bold">Deployment Queue</h2>
-          <p class="text-xs text-slate-400">Files ready for publish to www.heymia.lensflow.au</p>
+      </div>
+      <div id="tool-cinema" class="absolute inset-0 hidden overflow-y-auto overflow-x-hidden p-4">
+        <div class="max-w-5xl mx-auto pb-16 space-y-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-bold serif leading-tight">Cinema · 30-minute films</h2>
+              <p class="text-[11px] text-slate-400 mt-1">Mia writes the bible. Kling / Runway / Luma make the shots. Cut stitches. YouTube pack is included. She cannot render 30 minutes of pixels on this Worker — that is the honest pipeline that actually ships films.</p>
+            </div>
+            <button onclick="listCinemaNow()" class="shrink-0 px-3 py-2 rounded-xl glass-light text-xs font-bold">Saved films</button>
+          </div>
+          <div class="grid lg:grid-cols-2 gap-3">
+            <div class="glass rounded-2xl p-4 border border-white/10 space-y-2">
+              <input id="cin-title" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="Title — The Door That Shouldn't">
+              <textarea id="cin-premise" rows="4" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="Premise — who wants what, the impossible image, the cost"></textarea>
+              <div class="grid grid-cols-2 gap-2">
+                <input id="cin-genre" class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Genre" value="magical realism">
+                <input id="cin-runtime" type="number" min="8" max="90" value="30" class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Minutes">
+                <input id="cin-hero" class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Hero">
+                <input id="cin-vibe" class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Vibe — wonder, dread, payoff">
+              </div>
+              <button onclick="createCinemaNow()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold">Write the 30-min bible</button>
+              <div id="cin-status" class="text-[11px] text-slate-400"></div>
+            </div>
+            <div class="glass rounded-2xl p-4 border border-white/10 space-y-2">
+              <div class="text-xs font-bold">Shot engines</div>
+              <div class="flex flex-wrap gap-1.5" id="cin-engines"></div>
+              <p class="text-[10px] text-slate-500">Lock prompt (paste into every generator): cinematic 2.39:1 anamorphic, 35mm grain, same face, same coat, no text, no watermark.</p>
+              <div id="cin-saved" class="text-[11px] text-slate-400 space-y-1"></div>
+            </div>
+          </div>
+          <div id="cin-board" class="space-y-3"></div>
         </div>
-        <div id="deploy-list" class="space-y-3"></div>
+      </div>
+      <div id="tool-cut" class="absolute inset-0 hidden flex-col bg-[#0a0a0b]">
+        <iframe id="cut-frame" title="HeyMia Cut bench" src="/edit.html?embed=1" class="w-full h-full border-0 bg-[#0a0a0b]"></iframe>
+      </div>
+
+      <div id="tool-pentad" class="absolute inset-0 hidden overflow-y-auto overflow-x-hidden p-4">
+        <div class="max-w-3xl pb-16 space-y-3">
+          <h2 class="text-lg font-bold serif">Pentad · 5D frame</h2>
+          <p class="text-[12px] text-slate-400">Five axes: plane, depth, time, tone, citation. The fifth is what answer engines quote. Every site Mia publishes now ships with llms.txt + JSON-LD too.</p>
+          <input id="pentad-name" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="Name — Missing Cash, Bartermint…">
+          <input id="pentad-claim" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="One-line meaning">
+          <textarea id="pentad-quote" rows="3" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="Exact sentence an AI should cite"></textarea>
+          <div class="flex gap-2">
+            <button onclick="mintPentadNow()" class="px-4 py-2 rounded-xl bg-pink-600 text-xs font-bold">Mint Pentad</button>
+            <a href="/pentad.html" target="_blank" class="px-4 py-2 rounded-xl glass-light text-xs font-bold">Open the gift</a>
+          </div>
+          <div id="pentad-status" class="text-[11px] text-slate-400"></div>
+        </div>
+      </div>
+
+      <!-- DEPLOY -->
+      <div id="tool-deploy" class="absolute inset-0 hidden p-4 overflow-y-auto">
+        <div class="max-w-5xl mx-auto pb-16">
+          <div class="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h2 class="text-lg font-bold serif leading-tight">Deployment</h2>
+              <p class="text-[11px] text-slate-400 mt-1">Git push updates this Worker. Version, last ship, live pages, and the publish queue live here.</p>
+            </div>
+            <button onclick="refreshDeployBoard()" class="shrink-0 px-3 py-2 rounded-xl bg-pink-600 text-xs font-bold">Refresh</button>
+          </div>
+          <div id="deploy-result-panel" class="hidden rounded-2xl p-4 mb-4 border text-sm font-bold"></div>
+          <div id="deploy-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4"></div>
+          <div class="glass rounded-2xl p-5 border border-white/10 mb-4">
+            <h3 class="text-sm font-bold mb-2">Live pages</h3>
+            <div id="publish-status" class="text-xs text-slate-400">Loading…</div>
+            <div class="mt-4 pt-4 border-t border-white/10">
+              <h3 class="text-sm font-bold mb-1">HTML in vault</h3>
+              <p class="text-xs text-slate-400 mb-3">Git already ships Work. Pin a custom HTML file only if you need an override.</p>
+              <div id="publish-list" class="space-y-2 text-xs max-h-72 overflow-y-auto"></div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-white/10">
+              <h3 class="text-sm font-bold mb-1">Backups</h3>
+              <div class="flex gap-2 flex-wrap">
+                <button onclick="backupLivePages()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold">Back up live pages</button>
+                <button onclick="downloadLivePages()" class="px-4 py-2 rounded-xl glass-light text-xs font-bold">Download copies</button>
+              </div>
+              <div id="backup-status" class="text-[10px] text-slate-400 mt-2"></div>
+            </div>
+          </div>
+          <div class="glass rounded-2xl p-5 border border-white/10 mb-3">
+            <h3 class="text-sm font-bold">Deployment queue</h3>
+            <p class="text-xs text-slate-400">Vault → Publish / Deploy adds a file here.</p>
+          </div>
+          <div id="deploy-list" class="space-y-3"></div>
+        </div>
       </div>
 
       <!-- SITES / DESIGNER -->
@@ -642,6 +739,22 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
 
     </div>
   </main>
+  <div class="resize-handle" data-resize="preview" title="Drag to resize deploy panel"></div>
+  <aside id="vault-preview" class="flex flex-col glass border-l border-white/10 shrink-0" style="width:20rem">
+    <div class="p-3 border-b border-white/10">
+      <div class="text-xs font-bold">Preview & Deploy</div>
+      <div id="dock-ship" class="text-[10px] text-slate-400 mt-1 leading-snug">Worker …</div>
+    </div>
+    <div id="preview-area" class="flex-1 flex flex-col min-h-0 p-3 overflow-hidden">
+      <div id="preview-frame" class="w-full flex-1 min-h-[160px] rounded-xl preview-empty border border-white/10 flex items-center justify-center text-slate-500 text-xs mb-3 overflow-hidden">Select a file in Vault, or open Deploy</div>
+      <div id="prev-meta" class="text-[10px] text-slate-400 w-full space-y-1 hidden shrink-0"></div>
+    </div>
+    <div class="p-3 border-t border-white/10 space-y-2 shrink-0">
+      <button type="button" onclick="switchTool('deploy')" class="w-full py-2 rounded-xl glass-light text-xs font-bold">Open deployment board</button>
+      <button id="btn-deploy" onclick="deploySelected()" disabled class="w-full py-2 rounded-xl bg-emerald-600/80 hover:bg-emerald-500 text-xs font-bold disabled:opacity-40">Publish / Deploy</button>
+      <button id="btn-route" onclick="routeSelected()" disabled class="w-full py-2 rounded-xl glass-light text-xs font-medium disabled:opacity-40">Ask Mia to Route</button>
+    </div>
+  </aside>
 </div>
 
 <!-- SETTINGS / VARIABLES & SECRETS -->
@@ -753,6 +866,10 @@ const CATS = [
   { id:'legal', name:'Legal', icon:'⚖️', color:'#eab308' },
   { id:'finance', name:'Finance', icon:'💰', color:'#14b8a6' },
   { id:'unsorted', name:'Unsorted', icon:'📦', color:'#64748b' },
+  { id:'vault', name:'Vault', icon:'📁', color:'#94a3b8' },
+  { id:'project', name:'Project', icon:'📂', color:'#f472b6' },
+  { id:'ui', name:'UI', icon:'🖥️', color:'#818cf8' },
+  { id:'sites', name:'Sites', icon:'🌐', color:'#38bdf8' },
 ];
 
 /** Extensions treated as openable text/code in the vault preview */
@@ -846,21 +963,21 @@ function seedDemoVault() {
 
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', () => {
-  setupDrop();
-  seedDemoVault();
-  renderCats();
-  renderFiles();
-  initChecklist();
-  renderTraining();
-  updateGeminiStatus();
+  try { setupDrop(); } catch (e) {}
+  try { seedDemoVault(); } catch (e) {}
+  try { renderCats(); } catch (e) {}
+  try { renderFiles(); } catch (e) {}
+  try { initChecklist(); } catch (e) {}
+  try { renderTraining(); } catch (e) {}
+  try { updateGeminiStatus(); } catch (e) {}
   try { initMiaControls(); } catch (e) {}
   try { loadCloudVault(); } catch (e) {}
   try { loadLastDeploy(); } catch (e) {}
   try { maybeAutoDailyReport(); } catch (e) {}
   try { updateQuoteStatus(); renderTriggerPanel(); } catch (e) {}
-  switchTool('projects');
-  const geminiMsg = state.geminiKey ? 'Gemini AI active.' : 'Add Gemini / Cloudflare / Stripe keys in the gear (Variables & Secrets).';
-  addMia("I'm here. What's on your mind?");
+  try { switchTool('projects'); } catch (e) {}
+  try { loadMiaHistory(); } catch (e) {}
+  try { paintDockShip(); } catch (e) {}
 });
 
 // ========== MODE / TOOL SWITCH ==========
@@ -883,15 +1000,19 @@ function switchTool(t) {
   const panel = document.getElementById('tool-' + t);
   if (panel) {
     panel.classList.remove('hidden');
-    if (t === 'vault' || t === 'editor' || t === 'studio') panel.classList.add('flex');
-    if (t === 'editor' || t === 'studio') panel.classList.add('flex-col');
+    if (t === 'vault' || t === 'editor' || t === 'studio' || t === 'cut') panel.classList.add('flex');
+    if (t === 'editor' || t === 'studio' || t === 'cut') panel.classList.add('flex-col');
   }
   if (t === 'checklist') renderChecklist();
   if (t === 'training') renderTraining();
-  if (t === 'deploy') { renderDeploy(); try { renderPublish(); } catch (e) {} }
+  if (t === 'deploy') { try { refreshDeployBoard(); } catch (e) {} }
   if (t === 'sites') { try { renderPublishedSites(); } catch (e) {} }
+  if (t === 'pentad') {}
   if (t === 'projects') { try { renderProducts(); } catch (e) {} }
   if (t === 'editor') { try { renderMarketing(); } catch (e) {} }
+  if (t === 'cinema') { try { renderCinema(); } catch (e) {} }
+  if (t === 'clips') { try { refreshClips(); } catch (e) {} }
+  if (t === 'editor') { try { checkIg(); } catch (e) {} }
 
   document.querySelectorAll('.tool-tab').forEach(btn => {
     const base = 'tool-tab px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 ';
@@ -978,6 +1099,19 @@ async function sendToMia(e) {
     const brief = document.getElementById('mkt-brief');
     if (brief && !brief.value) brief.value = text;
   }
+  if (/\b(crop|trim|mute|ffmpeg|magic eraser|erase|cut bench|edit (the )?(video|audio|clip|image))\b/i.test(text)) {
+    switchTool('cut');
+  }
+  if (/\b(30[\s-]?min|movie|film|cinema|screenplay|shot list|featurette)\b/i.test(text)) {
+    switchTool('cinema');
+    const prem = document.getElementById('cin-premise');
+    if (prem && !prem.value) prem.value = text;
+  }
+  if (/\b(make (a |the )?(video|clip)|render (a |the )?(video|clip)|4k clip|imagine video)\b/i.test(text)) {
+    switchTool('clips');
+    const s = document.getElementById('clip-story');
+    if (s && !s.value) s.value = text;
+  }
   if (/\b(web\s?site|landing\s?page|design (a |the )?site)\b/i.test(text)) {
     switchTool('sites');
     const brief = document.getElementById('site-brief');
@@ -1015,6 +1149,7 @@ async function sendToMia(e) {
         addMia(reply);
         if (!state.miaTurns) state.miaTurns = [];
         state.miaTurns.push({ role: 'assistant', content: reply });
+        persistMiaTurns();
         speakMiaText(reply);
         if (wdata.site && wdata.site.url) {
           showDeployResult({ ok: true, name: wdata.site.slug || 'site', url: wdata.site.url, at: new Date().toISOString() });
@@ -1332,16 +1467,34 @@ function resetChecklist() {
 // ========== TRAINING ==========
 function renderTraining() {
   const log = document.getElementById('training-log');
-  if (!log) return;
-  if (!state.trainingNotes.length) {
-    log.innerHTML = '<div class="text-slate-500">No training notes yet. Add your first note above.</div>';
-    return;
-  }
-  log.innerHTML = state.trainingNotes.map((n, i) => `
+  if (log) {
+    log.innerHTML = state.trainingNotes.length
+      ? state.trainingNotes.map((n, i) => `
     <div class="p-3 rounded-xl bg-white/5 flex justify-between gap-2">
       <div><div class="text-[10px] text-slate-500 mb-0.5">${n.date}</div>${escapeHtml(n.text)}</div>
       <button onclick="removeTraining(${i})" class="text-slate-500 hover:text-red-400 text-xs shrink-0">✕</button>
-    </div>`).join('');
+    </div>`).join('')
+      : '<div class="text-slate-500">Personal notes land here. The 7-day camp is already in the vault.</div>';
+  }
+  loadCampBoard();
+}
+async function loadCampBoard() {
+  const board = document.getElementById('camp-board');
+  const report = document.getElementById('mem-report');
+  try {
+    const d = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/training')).json();
+    if (board && d.camp7) {
+      board.innerHTML = d.camp7.map((x) =>
+        `<div class="p-2 rounded-xl bg-white/5"><div class="font-bold text-pink-300">Day ${x.day} · ${escapeHtml(x.title)}</div><div class="text-slate-400 mt-0.5">${escapeHtml(x.pass)}</div></div>`
+      ).join('');
+    }
+  } catch (e) {
+    if (board) board.textContent = 'Camp loads after Cloudflare ships 4.2.0.';
+  }
+  try {
+    const r = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/memory?report=1')).json();
+    if (report) report.textContent = 'Memory: ' + (r.chat_turns || 0) + ' chat turns · ' + (r.memories || 0) + ' stored facts · 12-month keep. Chat history is on the Worker, not only this phone.';
+  } catch (e) {}
 }
 function saveTraining() {
   const input = document.getElementById('training-input');
@@ -1349,6 +1502,7 @@ function saveTraining() {
   if (!text) return;
   state.trainingNotes.unshift({ text, date: new Date().toLocaleString() });
   localStorage.setItem('heymia_training', JSON.stringify(state.trainingNotes));
+  try { fetch((WORKER_BASE||location.origin).replace(/\/$/, '') + '/api/memory', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key: 'train_'+Date.now(), value: text, category: 'training' }) }); } catch(e) {}
   input.value = '';
   renderTraining();
   addMia('Training note saved. I will follow it in every future reply' + (state.geminiKey ? ' (Gemini active).' : '.'));
@@ -1417,6 +1571,9 @@ async function handleFiles(list) {
         if (/\.html$/i.test(file.name) || cat === 'upgrade') {
           entry._offerUpgrade = true;
           addMia('HTML uploaded. Shell: upgrade work ' + (entry.key || '') + '  — or say “activate upgrade”.');
+        }
+        if (/\.mp4$/i.test(file.name) || (file.type || '').startsWith('video/')) {
+          addMia('Video is in the vault. Say “convert this clip to html” or open it and tap Convert MP4 to HTML page.');
         }
       } else {
         const err = await up.json().catch(() => ({}));
@@ -1532,6 +1689,25 @@ function openProduct(slug) {
     </div>
     ${files.length ? files.map((f) => `<button onclick="switchTool('vault');setProject('${slug}');selectFile('${f.id}')" class="block w-full text-left text-xs py-2 border-b border-white/5">${escapeHtml(f.name)}</button>`).join('') : '<div class="text-xs text-slate-400">No files yet. Drop uploads and say “file this into ' + p.name + '”.</div>'}
   </div>`;
+}
+
+async function mintPentadNow() {
+  const name = (document.getElementById('pentad-name').value || 'Pentad').trim();
+  const claim = (document.getElementById('pentad-claim').value || '').trim();
+  const quote = (document.getElementById('pentad-quote').value || '').trim();
+  const st = document.getElementById('pentad-status');
+  st.textContent = 'Minting…';
+  try {
+    const res = await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/pentad', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, claim, quote }),
+    });
+    const d = await res.json();
+    st.innerHTML = d.ok ? ('Live: <a class="text-pink-300 underline" href="' + (d.url || '/pentad.html') + '" target="_blank">' + (d.url || '/pentad.html') + '</a>') : (d.error || 'fail');
+    addMia(d.ok ? ('Pentad minted. Five axes. Citation field is in. ' + (d.url || '')) : 'Mint failed');
+  } catch (e) {
+    st.textContent = String(e.message || e);
+  }
 }
 
 async function seedProductsNow() {
@@ -1655,11 +1831,12 @@ async function selectFile(id) {
   const frame = document.getElementById('preview-frame') || area.querySelector('div') || area;
   const t = f.type || '';
   if (t.startsWith('image/')) {
-    frame.innerHTML = `<img src="${f.url}" class="w-full h-full object-contain rounded-xl">`;
-  } else if (t.startsWith('video/')) {
-    frame.innerHTML = `<video src="${f.url}" class="w-full h-full object-contain" controls></video>`;
+    frame.innerHTML = `<div class="w-full h-full flex flex-col gap-2"><img src="${f.url}" class="w-full flex-1 object-contain rounded-xl"><button type="button" onclick="openCut('${(f.key||'').replace(/'/g,'')}', '${String(f.name).replace(/'/g,'')}')" class="px-3 py-2 rounded-xl bg-white text-black text-[11px] font-bold">Magic eraser / crop</button></div>`;
+  } else if (t.startsWith('video/') || /\.mp4$/i.test(f.name)) {
+    const k = f.key || '';
+    frame.innerHTML = `<div class="w-full h-full flex flex-col gap-2"><video src="${f.url}" class="w-full flex-1 object-contain" controls></video><div class="flex gap-2"><button type="button" onclick="openCut('${k.replace(/'/g,'')}', '${String(f.name).replace(/'/g,'')}')" class="flex-1 px-3 py-2 rounded-xl bg-white text-black text-[11px] font-bold">Edit in Cut</button><button type="button" onclick="convertMp4Now('${k.replace(/'/g,'')}', '${String(f.name).replace(/'/g,'')}')" class="flex-1 px-3 py-2 rounded-xl bg-pink-600 text-[11px] font-bold">MP4 to HTML</button></div></div>`;
   } else if (t.startsWith('audio/')) {
-    frame.innerHTML = `<div class="w-full text-center space-y-3"><div class="text-4xl">🎵</div><audio src="${f.url}" class="w-full" controls></audio><div class="text-[10px] text-slate-400">${escapeHtml(f.name)}</div></div>`;
+    frame.innerHTML = `<div class="w-full text-center space-y-3"><audio src="${f.url}" class="w-full" controls></audio><div class="text-[10px] text-slate-400">${escapeHtml(f.name)}</div><button type="button" onclick="openCut('${(f.key||'').replace(/'/g,'')}', '${String(f.name).replace(/'/g,'')}')" class="px-3 py-2 rounded-xl bg-white text-black text-[11px] font-bold">Edit audio in Cut</button></div>`;
   } else if (isCodeFile(f) || /.html?$/i.test(f.name)) {
     frame.innerHTML = `<div class="w-full h-full flex flex-col min-h-[200px]"><div class="flex items-center justify-between mb-2 shrink-0"><span class="text-[10px] font-bold text-indigo-300">${codeIcon(f.name)} ${lang || 'Text'}</span><div class="flex gap-1"><button type="button" onclick="copyPreviewText()" class="px-2 py-0.5 rounded bg-white/10 text-[9px] font-bold">Copy</button><a href="${f.url}" download="${escapeHtml(f.name)}" class="px-2 py-0.5 rounded bg-white/10 text-[9px] font-bold no-underline text-white">Download</a></div></div><pre id="code-preview" class="flex-1 overflow-auto bg-black/50 border border-white/10 rounded-xl p-3 text-[11px] font-mono text-emerald-200/90 whitespace-pre-wrap break-words max-h-[55vh]">Loading…</pre></div>`;
     try {
@@ -1743,9 +1920,9 @@ function renderDeploy() {
   }).join('');
 }
 
-function showDeployResult(rec) {
+function showDeployResult(rec, opts) {
   if (!rec) return;
-  const ok = !!rec.ok;
+  const ok = rec.ok !== false && !rec.error;
   const when = rec.at ? fmtWhen(rec.at) : new Date().toLocaleString();
   const title = ok ? 'DEPLOY SUCCESS' : 'DEPLOY FAILED';
   const detail = ok
@@ -1767,7 +1944,9 @@ function showDeployResult(rec) {
       : 'border-rose-500/40 bg-rose-500/10 text-rose-300');
     panel.innerHTML = '<div class="text-[11px] tracking-widest uppercase mb-1">' + title + '</div><div class="font-medium text-white/90">' + detail + '</div>';
   }
-  try { addMia(ok ? ('Deploy succeeded: ' + (rec.url || rec.name || 'live')) : ('Deploy failed: ' + (rec.error || 'unknown'))); } catch (e) {}
+  if (!opts || !opts.silent) {
+    try { addMia(ok ? ('Deploy succeeded: ' + (rec.url || rec.name || 'live')) : ('Deploy failed: ' + (rec.error || 'unknown'))); } catch (e) {}
+  }
 }
 
 function showDeployPending(name) {
@@ -1791,12 +1970,23 @@ async function logDeploy(rec) {
 
 async function loadLastDeploy() {
   try {
-    const raw = localStorage.getItem('heymia_last_deploy');
-    if (raw) showDeployResult(JSON.parse(raw));
+    const st = await (await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/status')).json();
+    const last = st.last_deploy || {};
+    const rec = {
+      ok: st.ok !== false && last.ok !== false,
+      name: 'heymia ' + (st.version || '') + (last.name ? ' · ' + last.name : ''),
+      action: last.action || 'git',
+      url: last.url || (st.domain || location.origin) + '/work',
+      at: last.at || new Date().toISOString(),
+      error: last.ok === false ? (last.error || '') : '',
+    };
+    showDeployResult(rec, { silent: true });
+    try { localStorage.setItem('heymia_last_deploy', JSON.stringify(rec)); } catch (e) {}
+    return;
   } catch (e) {}
   try {
-    const data = await (await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/deploy')).json();
-    if (data && data.last) showDeployResult(data.last);
+    const raw = localStorage.getItem('heymia_last_deploy');
+    if (raw) showDeployResult(JSON.parse(raw), { silent: true });
   } catch (e) {}
 }
 
@@ -1935,35 +2125,121 @@ async function renderPublishedSites() {
 }
 
 // ========== GLOBAL SEARCH ==========
+function catName(cat) {
+  const mapping = {
+    code: 'Code',
+    image: 'Image',
+    video: 'Video',
+    audio: 'Audio',
+    text: 'Text',
+    project: 'Project',
+    folder: 'Folder',
+    misc: 'Misc'
+  };
+  if (mapping[cat]) return mapping[cat];
+  if (!cat || cat === 'all') return 'All Files';
+  const c = (typeof CATS !== 'undefined' ? CATS : []).find((x) => x.id === cat);
+  if (c) return c.name;
+  return String(cat).replace(/[-_]/g, ' ');
+}
+
 function runGlobalSearch(q) {
   const box = document.getElementById('search-results');
-  if (!q.trim()) { box.classList.add('hidden'); return; }
-  const lower = q.toLowerCase();
+  if (!box) return;
+  const query = String(q || '').trim();
+  if (!query) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+  const lower = query.toLowerCase();
   const hits = [];
-  state.files.forEach(f => {
-    if (f.name.toLowerCase().includes(lower) || f.category.includes(lower) || (f.routedTo||'').includes(lower))
-      hits.push({ type:'file', label:f.name, sub:catName(f.category), id:f.id });
+  const seen = new Set();
+  const push = (h) => {
+    const k = (h.type || '') + ':' + (h.id || h.label);
+    if (seen.has(k)) return;
+    seen.add(k);
+    hits.push(h);
+  };
+  (state.files || []).forEach((f) => {
+    const cat = String(f.category || '');
+    const name = String(f.name || '');
+    const key = String(f.key || '');
+    const proj = String(f.project || '');
+    const blob = (name + ' ' + cat + ' ' + key + ' ' + proj + ' ' + (f.routedTo || '')).toLowerCase();
+    if (blob.includes(lower)) {
+      push({ type: 'file', label: name, sub: catName(cat) + (key ? ' · ' + key : ''), id: f.id });
+    }
   });
-  state.contentStore.forEach(c => {
-    if (c.name.toLowerCase().includes(lower) || c.content.toLowerCase().includes(lower))
-      hits.push({ type:'content', label:c.name, sub:c.content.slice(0,60)+'…' });
+  (state.contentStore || []).forEach((c) => {
+    const name = String(c.name || '');
+    const content = String(c.content || '');
+    if (name.toLowerCase().includes(lower) || content.toLowerCase().includes(lower)) {
+      push({ type: 'content', label: name, sub: content.slice(0, 60) + (content.length > 60 ? '…' : ''), id: c.id || '' });
+    }
+  });
+  (typeof PRODUCTS_UI !== 'undefined' ? PRODUCTS_UI : []).forEach((p) => {
+    const blob = [p.name, p.slug, p.blurb, (p.urls || []).join(' ')].join(' ').toLowerCase();
+    if (blob.includes(lower)) {
+      push({ type: 'project', label: p.name, sub: 'Project · ' + (p.slug || ''), id: p.slug });
+    }
+  });
+  (typeof CATS !== 'undefined' ? CATS : []).forEach((c) => {
+    if (c.name.toLowerCase().includes(lower) || c.id.toLowerCase().includes(lower)) {
+      push({ type: 'folder', label: c.name, sub: catName('folder'), id: c.id });
+    }
+  });
+  [
+    { id: 'clips', name: 'Clips', sub: 'Store and download videos' },
+    { id: 'cinema', name: 'Cinema', sub: '30-min movie bible' },
+    { id: 'cut', name: 'Cut bench', sub: 'Trim, crop, magic eraser' },
+    { id: 'editor', name: 'Marketing', sub: 'Clips, posts, social' },
+    { id: 'deploy', name: 'Deploy', sub: 'Publish live' },
+    { id: 'sites', name: 'Sites', sub: 'Design and publish' },
+    { id: 'vault', name: 'File Vault', sub: 'All files' },
+    { id: 'pentad', name: '5D Pentad', sub: 'Citation frames' },
+  ].forEach((t) => {
+    if ((t.name + ' ' + t.sub + ' ' + t.id).toLowerCase().includes(lower)) {
+      push({ type: 'tool', label: t.name, sub: t.sub, id: t.id });
+    }
   });
   if (!hits.length) {
-    box.innerHTML = '<div class="p-3 text-xs text-slate-500">No matches</div>';
+    box.innerHTML = '<div class="p-3 text-xs text-slate-500">No matches for “' + escapeHtml(query) + '”</div>';
   } else {
-    box.innerHTML = hits.slice(0,12).map(h => `
-      <div class="px-3 py-2 hover:bg-white/5 cursor-pointer text-xs border-b border-white/5 last:border-0" onclick="searchGo('${h.type}','${h.id||''}')">
-        <div class="font-medium">${h.label}</div>
-        <div class="text-[10px] text-slate-500">${h.sub}</div>
+    box.innerHTML = hits.slice(0, 12).map((h, i) => `
+      <div class="px-3 py-2 hover:bg-white/5 cursor-pointer text-xs border-b border-white/5 last:border-0 ${i===0?'bg-white/5':''}" onclick="searchGo('${h.type}','${String(h.id||'').replace(/'/g, '')}')">
+        <div class="font-medium">${escapeHtml(h.label)}</div>
+        <div class="text-[10px] text-slate-500">${escapeHtml(h.sub || '')}</div>
       </div>`).join('');
   }
+  box.dataset.first = hits[0] ? (hits[0].type + '|' + (hits[0].id || '')) : '';
   box.classList.remove('hidden');
 }
 
-function searchGo(type, id) {
-  document.getElementById('search-results').classList.add('hidden');
-  if (type === 'file' && id) { switchTool('vault'); selectFile(id); }
+function globalSearchKey(e) {
+  const box = document.getElementById('search-results');
+  if (e.key === 'Escape') {
+    if (box) { box.classList.add('hidden'); box.innerHTML = ''; }
+    e.target.blur();
+    return;
+  }
+  if (e.key === 'Enter' && box && box.dataset.first) {
+    const [type, id] = box.dataset.first.split('|');
+    searchGo(type, id);
+  }
 }
+
+function searchGo(type, id) {
+  const box = document.getElementById('search-results');
+  if (box) box.classList.add('hidden');
+  if (type === 'file' && id) { switchTool('vault'); selectFile(id); return; }
+  if (type === 'project' && id) { switchTool('projects'); try { openProduct(id); } catch (e) {} return; }
+  if (type === 'folder' && id) { switchTool('vault'); setCat(id); return; }
+  if (type === 'tool' && id) { switchTool(id); return; }
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = e.target && e.target.closest && e.target.closest('#global-search, #search-results');
+  if (wrap) return;
+  const box = document.getElementById('search-results');
+  if (box) box.classList.add('hidden');
+});
 
 // ========== FIND & REPLACE ==========
 function doFindReplace(execute) {
@@ -2121,6 +2397,295 @@ function mktMailTo() {
   const subject = document.getElementById('mkt-email-subject').value || '';
   const body = document.getElementById('mkt-email-body').value || '';
   location.href = 'mailto:' + encodeURIComponent(to) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+}
+
+const CINEMA_ENGINES = [
+  { name:'Kling', url:'https://klingai.com', use:'8s motion, character lock' },
+  { name:'Runway', url:'https://runwayml.com', use:'camera moves' },
+  { name:'Luma', url:'https://lumalabs.ai/dream-machine', use:'magic physics' },
+  { name:'Hailuo', url:'https://hailuoai.video', use:'volume B-roll' },
+  { name:'Pika', url:'https://pika.art', use:'stylised inserts' },
+  { name:'CapCut', url:'https://www.capcut.com', use:'captions + stitch' },
+  { name:'ElevenLabs', url:'https://elevenlabs.io/app/speech-synthesis', use:'dialogue' },
+  { name:'Suno', url:'https://suno.com', use:'score' },
+];
+
+function renderCinema() {
+  const box = document.getElementById('cin-engines');
+  if (box) {
+    box.innerHTML = CINEMA_ENGINES.map((e) =>
+      `<a class="px-2 py-1 rounded-lg glass-light text-[10px] font-bold" href="${e.url}" target="_blank" rel="noopener">${escapeHtml(e.name)} · ${escapeHtml(e.use)}</a>`
+    ).join('');
+  }
+  listCinemaNow();
+}
+
+async function createCinemaNow() {
+  const payload = {
+    title: (document.getElementById('cin-title').value || '').trim() || 'The Door That Shouldn\'t',
+    premise: (document.getElementById('cin-premise').value || '').trim(),
+    genre: (document.getElementById('cin-genre').value || '').trim() || 'magical realism',
+    runtime: Number(document.getElementById('cin-runtime').value) || 30,
+    hero: (document.getElementById('cin-hero').value || '').trim() || 'the seeker',
+    vibe: (document.getElementById('cin-vibe').value || '').trim(),
+  };
+  const st = document.getElementById('cin-status');
+  if (st) st.textContent = 'Writing bible…';
+  try {
+    const rec = await (await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/cinema', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    })).json();
+    if (st) st.textContent = rec.ok ? ('Saved movies/' + rec.slug + '/ · ' + (rec.scenes || []).length + ' scenes · ' + rec.runtime_min + ' min') : (rec.error || 'fail');
+    paintCinema(rec);
+    addMia(rec.ok
+      ? ('Movie bible ready: “' + rec.title + '”. ' + (rec.scenes || []).length + ' scenes, 108 locked shots. Generate in Kling with the lock prompt, then stitch in Cut. I did not render 30 minutes of pixels — that is the part the engines do.')
+      : ('Cinema failed: ' + (rec.error || 'unknown')));
+    listCinemaNow();
+  } catch (e) {
+    if (st) st.textContent = e.message;
+    addMia('Cinema request failed: ' + e.message);
+  }
+}
+
+function paintCinema(m) {
+  const board = document.getElementById('cin-board');
+  if (!board || !m || !m.scenes) return;
+  const yt = (m.viral && m.viral.youtube) || {};
+  board.innerHTML =
+    `<div class="glass rounded-2xl p-4 border border-white/10 space-y-2">
+      <div class="text-sm font-bold">${escapeHtml(m.title)}</div>
+      <div class="text-[11px] text-slate-400">${escapeHtml(m.logline || '')}</div>
+      <div class="text-[11px] text-pink-300">${escapeHtml(m.hook_3s || '')}</div>
+      <div class="text-[10px] text-slate-500">YouTube: ${escapeHtml(yt.title || '')}</div>
+      <pre class="text-[10px] bg-black/40 rounded-xl p-3 overflow-x-auto whitespace-pre-wrap">${escapeHtml(m.lock || '')}</pre>
+    </div>` +
+    m.scenes.map((s) => {
+      const start = Math.floor(s.start / 60) + ':' + String(s.start % 60).padStart(2, '0');
+      return `<div class="glass rounded-2xl p-4 border border-white/10">
+        <div class="flex justify-between gap-2 text-xs font-bold"><span>${escapeHtml(s.id)} · ${escapeHtml(s.fn)}</span><span class="text-slate-500">${start} · ${s.duration}s</span></div>
+        <div class="text-[11px] text-slate-400 mt-1">${escapeHtml(s.purpose || '')}</div>
+        ${s.dialogue ? '<div class="text-[12px] mt-2 italic">' + escapeHtml(s.dialogue) + '</div>' : ''}
+        <div class="mt-2 space-y-1">${(s.shots || []).map((sh) =>
+          '<div class="text-[10px] text-slate-400"><span class="text-pink-300 font-bold">' + escapeHtml(sh.id) + '</span> ' + escapeHtml(sh.prompt) + '</div>'
+        ).join('')}</div>
+      </div>`;
+    }).join('');
+}
+
+async function listCinemaNow() {
+  const box = document.getElementById('cin-saved');
+  if (!box) return;
+  try {
+    const d = await (await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/cinema')).json();
+    const movies = d.movies || [];
+    box.innerHTML = movies.length
+      ? movies.map((m) => `<button class="block text-left w-full truncate hover:text-pink-300" onclick="openCinema('${m.slug}')">${escapeHtml(m.title)} · ${m.runtime_min}m · ${m.scenes} scenes</button>`).join('')
+      : 'No films yet — write one.';
+  } catch (e) {
+    box.textContent = 'Could not list films.';
+  }
+}
+
+async function openCinema(slug) {
+  try {
+    const m = await (await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/cinema?slug=' + encodeURIComponent(slug))).json();
+    paintCinema(m);
+    addMia('Opened “' + (m.title || slug) + '”.');
+  } catch (e) {
+    addMia('Could not open film: ' + e.message);
+  }
+}
+
+function clipUrl(c, download) {
+  const base = (WORKER_BASE || location.origin).replace(/\/$/, '');
+  return base + '/files?key=' + encodeURIComponent(c.key) + (download ? '&download=1' : '');
+}
+async function refreshClips() {
+  const grid = document.getElementById('clips-grid');
+  const st = document.getElementById('clips-status');
+  if (st) st.textContent = 'Loading clips/ …';
+  try {
+    const d = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/clips')).json();
+    const clips = d.clips || [];
+    if (st) st.textContent = clips.length ? (clips.length + ' in clips/') : 'Folder is ready — drop the first MP4.';
+    if (!grid) return;
+    grid.innerHTML = clips.length ? clips.map((c) => {
+      const play = clipUrl(c, false);
+      const dl = clipUrl(c, true);
+      const media = c.video
+        ? `<video src="${play}" class="w-full h-36 object-cover bg-black" controls preload="metadata"></video>`
+        : `<div class="h-36 flex items-center justify-center text-3xl bg-white/5">📄</div>`;
+      return `<div class="glass rounded-2xl overflow-hidden border border-white/10">
+        ${media}
+        <div class="p-3 space-y-2">
+          <div class="text-xs font-bold truncate">${escapeHtml(c.name)}</div>
+          <div class="text-[10px] text-slate-500">${Math.round((c.size||0)/1024)} KB</div>
+          <a class="block text-center py-2 rounded-xl bg-emerald-600 text-[11px] font-bold no-underline text-white" href="${dl}">Download</a>
+          ${c.video ? `<button type="button" onclick="igPostClip('${escapeHtml(c.key)}','${escapeHtml(c.name)}')" class="w-full py-2 rounded-xl bg-pink-600 text-[11px] font-bold">Post to Instagram</button>` : ''}
+        </div>
+      </div>`;
+    }).join('') : '<div class="text-slate-500 text-xs">Empty folder. Drop a clip above.</div>';
+  } catch (e) {
+    if (st) st.textContent = 'Clips folder waits on Worker 4.2.1.';
+  }
+  const drop = document.getElementById('clips-drop');
+  const input = document.getElementById('clips-input');
+  if (drop && !drop.dataset.bound) {
+    drop.dataset.bound = '1';
+    drop.addEventListener('click', () => input && input.click());
+    drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('dragover'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+    drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('dragover'); uploadClipFiles(e.dataTransfer.files); });
+    if (input) input.addEventListener('change', () => uploadClipFiles(input.files));
+  }
+}
+async function uploadClipFiles(fileList) {
+  const files = Array.from(fileList || []);
+  const st = document.getElementById('clips-status');
+  if (!files.length) return;
+  if (st) st.textContent = 'Uploading ' + files.length + '…';
+  for (const f of files) {
+    try {
+      const res = await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/clips', {
+        method: 'POST',
+        headers: { 'Content-Type': f.type || 'video/mp4', 'X-File-Name': f.name, 'X-Title': f.name },
+        body: f,
+      });
+      const d = await res.json();
+      addMia(d.ok ? ('Stored in clips/: ' + d.name) : ('Clip upload failed: ' + (d.error || res.status)));
+    } catch (e) {
+      addMia('Clip upload failed: ' + e.message);
+    }
+  }
+  refreshClips();
+}
+async function miaMakeClip(quality) {
+  const title = (document.getElementById('clip-title')?.value || 'Ash and Altar').trim();
+  const story = (document.getElementById('clip-story')?.value || '').trim();
+  const el = document.getElementById('clip-job');
+  if (el) el.textContent = 'Mia is calling ' + (quality === '4k' ? 'Veo 3.1 4K' : 'Grok Imagine Video 1.5') + '…';
+  addMia('Rendering “' + title + '” at ' + (quality === '4k' ? 'native 4K' : 'magical 1080p') + '. This is Mia, not a side generator.');
+  try {
+    const rec = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/clips/generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, story, quality, duration: quality === '4k' ? 8 : 12 })
+    })).json();
+    if (!rec.ok) {
+      if (el) el.textContent = rec.error || 'failed';
+      addMia('Mia could not render: ' + (rec.error || 'unknown') + '. If it is credits, add balance at console.x.ai (1080p) or Gemini billed Veo (4K).');
+      return;
+    }
+    if (el) el.textContent = rec.message + ' · ' + (rec.note || '');
+    pollClipJob(rec.job_id);
+  } catch (e) {
+    if (el) el.textContent = e.message;
+    addMia('Generate failed: ' + e.message);
+  }
+}
+async function pollClipJob(id) {
+  if (!id) return;
+  const el = document.getElementById('clip-job');
+  for (let i = 0; i < 40; i++) {
+    await new Promise((r) => setTimeout(r, 4000));
+    try {
+      const j = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/clips/jobs/' + id)).json();
+      if (el) el.textContent = (j.status || '…') + (j.error ? ' — ' + j.error : '') + (j.key ? ' · ' + j.key : '');
+      if (j.status === 'done') {
+        addMia('Clip is in the folder: ' + (j.key || id) + '. Download it from Clips.');
+        refreshClips();
+        return;
+      }
+      if (j.status === 'failed') {
+        addMia('Render failed: ' + (j.error || 'unknown'));
+        return;
+      }
+    } catch (e) {}
+  }
+}
+async function checkIg() {
+  const el = document.getElementById('ig-status');
+  if (!el) return;
+  try {
+    const d = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/social/instagram')).json();
+    if (d.ok) el.textContent = 'Connected @' + (d.username || d.id) + (d.account_type ? ' · ' + d.account_type : '');
+    else el.textContent = d.error || 'Not connected';
+  } catch (e) {
+    el.textContent = 'Worker has no Instagram route yet — wait for 4.4.0.';
+  }
+}
+function igPostClip(key, name) {
+  switchTool('editor');
+  const k = document.getElementById('ig-key');
+  const c = document.getElementById('ig-caption');
+  if (k) k.value = key;
+  if (c && !c.value) c.value = name.replace(/\.[^.]+$/, '') + '\n\n#heymia';
+  checkIg();
+}
+async function igPostNow() {
+  const key = (document.getElementById('ig-key')?.value || '').trim();
+  const caption = (document.getElementById('ig-caption')?.value || '').trim();
+  const el = document.getElementById('ig-job');
+  if (!key && !caption) { if (el) el.textContent = 'Need a clip key and a caption.'; return; }
+  if (el) el.textContent = 'Creating Instagram container…';
+  addMia('Posting to Instagram: ' + (key || 'url') + '.');
+  try {
+    const rec = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/social/instagram', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, caption })
+    })).json();
+    if (!rec.ok) {
+      if (el) el.textContent = rec.error || 'failed';
+      addMia('Instagram refused: ' + (rec.error || 'unknown'));
+      return;
+    }
+    if (el) el.textContent = rec.message;
+    pollIgJob(rec.job_id);
+  } catch (e) {
+    if (el) el.textContent = e.message;
+  }
+}
+async function pollIgJob(id) {
+  if (!id) return;
+  const el = document.getElementById('ig-job');
+  for (let i = 0; i < 30; i++) {
+    await new Promise((r) => setTimeout(r, 4000));
+    try {
+      const j = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/social/instagram/jobs/' + id)).json();
+      if (el) el.textContent = (j.status || '') + (j.container_status ? ' · ' + j.container_status : '') + (j.media_id ? ' · media ' + j.media_id : '') + (j.error ? ' — ' + j.error : '');
+      if (j.status === 'published') {
+        addMia('Posted. Instagram media ' + (j.media_id || id) + '.');
+        return;
+      }
+      if (j.status === 'failed') {
+        addMia('Instagram failed: ' + (j.error || 'unknown'));
+        return;
+      }
+    } catch (e) {}
+  }
+}
+async function downloadAllClips() {
+  const st = document.getElementById('clips-status');
+  try {
+    const d = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/clips')).json();
+    const clips = (d.clips || []).filter((c) => c.video || c.size);
+    if (!clips.length) { addMia('No clips to download yet.'); return; }
+    if (typeof JSZip === 'undefined') { addMia('JSZip missing — download clips one by one.'); return; }
+    if (st) st.textContent = 'Zipping ' + clips.length + '…';
+    const zip = new JSZip();
+    for (const c of clips) {
+      const res = await fetch(clipUrl(c, true));
+      zip.file(c.name, await res.arrayBuffer());
+    }
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'heymia-clips.zip';
+    a.click();
+    if (st) st.textContent = 'Downloaded heymia-clips.zip';
+    addMia('Clips zip downloaded (' + clips.length + ').');
+  } catch (e) {
+    addMia('Zip failed: ' + e.message);
+  }
 }
 
 async function mktList() {
@@ -2653,7 +3218,7 @@ function showPhoneLink() {
   window.addEventListener('pointermove', e => {
     if (!active) return;
     const dx = (e.clientX - startX) * active.dir;
-    const w = Math.min(Math.max(startW + dx, 140), window.innerWidth * 0.55);
+    const w = Math.min(Math.max(startW + dx, 160), window.innerWidth * 0.55);
     active.el.style.width = w + 'px';
   });
   window.addEventListener('pointerup', () => {
@@ -2668,7 +3233,10 @@ function showPhoneLink() {
   ['mia','cats','preview'].forEach(k => {
     const w = localStorage.getItem('heymia_w_' + k);
     const el = targets[k]?.();
-    if (w && el) el.style.width = w;
+    if (w && el) {
+      const n = parseFloat(w);
+      if (n >= 160) el.style.width = w;
+    }
   });
 })();
 
@@ -2973,7 +3541,7 @@ async function uiStatus() {
   try {
     const res = await fetch(WORKER_BASE.replace(/\/$/, '') + '/ui/status');
     const data = await res.json();
-    addMia('UI status: work=' + data.workActive + ' play=' + data.playActive);
+    addMia('UI status: work=' + (data.workActive || (data.work && data.work.active)) + ' play=' + (data.playActive || (data.play && data.play.active)));
     if (typeof shellPrint === 'function') shellPrint(JSON.stringify(data, null, 2));
     return data;
   } catch (e) {
@@ -3693,6 +4261,62 @@ async function helpSend() {
   }
 }
 
+
+async function loadMiaHistory() {
+  try {
+    const local = JSON.parse(localStorage.getItem('heymia_chat') || '[]');
+    if (Array.isArray(local) && local.length) state.miaTurns = local.slice(-80);
+  } catch (e) {}
+  try {
+    const res = await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/history?limit=80');
+    if (res.ok) {
+      const d = await res.json();
+      if (d.turns && d.turns.length) state.miaTurns = d.turns.map(t => ({ role: t.role, content: t.content }));
+    }
+  } catch (e) {}
+  const box = document.getElementById('mia-chat');
+  if (state.miaTurns && state.miaTurns.length && box) {
+    box.innerHTML = '';
+    state.miaTurns.slice(-40).forEach(t => addMia(t.content, t.role === 'user' ? 'user' : 'mia'));
+  } else {
+    addMia("I'm here. I keep a year of this chat. What's on your mind?");
+  }
+}
+function persistMiaTurns() {
+  try { localStorage.setItem('heymia_chat', JSON.stringify((state.miaTurns || []).slice(-200))); } catch (e) {}
+  try {
+    fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agent: 'Mia', turns: (state.miaTurns || []).slice(-6) }),
+    });
+  } catch (e) {}
+}
+function openCut(key, name) {
+  const q = new URLSearchParams();
+  q.set('embed', '1');
+  if (key) q.set('key', key);
+  if (name) q.set('name', name);
+  const frame = document.getElementById('cut-frame');
+  if (frame) frame.src = '/edit.html?' + q.toString();
+  switchTool('cut');
+}
+async function convertMp4Now(key, name) {
+  if (!key) { addMia('Upload the MP4 to the vault first, then convert.'); return; }
+  addMia('Wrapping “' + name + '” into an HTML page…');
+  try {
+    const res = await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/clip', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: key, name: name, title: String(name||'clip').replace(/\\.mp4$/i,'') })
+    });
+    const d = await res.json();
+    if (d.ok && d.url) {
+      addMia('Clip is a page: ' + d.url);
+      showDeployResult({ ok: true, name: d.slug || name, url: d.url, at: new Date().toISOString() });
+    } else addMia('Convert failed: ' + (d.error || 'unknown'));
+  } catch (e) { addMia('Convert failed: ' + (e.message || e)); }
+}
+
 const MEMORY_FILE = 'heymia-memory.json';
 function memStatus(msg) { const el = document.getElementById('memory-status'); if (el) el.textContent = msg; }
 async function importMemoryFiles(files) {
@@ -3776,7 +4400,50 @@ async function refreshBuildBadge() {
 }
 function openPublish() {
   try { switchTool('deploy'); } catch (e) {}
-  try { renderPublish(); } catch (e) {}
+  try { refreshDeployBoard(); } catch (e) { try { renderPublish(); } catch (err) {} }
+}
+function paintDockShip() {
+  const el = document.getElementById('dock-ship');
+  if (!el) return;
+  fetch(WORKER_BASE.replace(/\/$/, '') + '/api/status').then((r) => r.json()).then((st) => {
+    const last = st.last_deploy || {};
+    el.innerHTML = escapeHtml(st.version || 'worker') +
+      (last.name ? ' · ' + escapeHtml(last.name) : '') +
+      (last.at ? '<br>' + escapeHtml(fmtWhen(last.at)) : '');
+  }).catch(() => { el.textContent = 'Worker offline'; });
+}
+function cardHtml(k, v, sub) {
+  return '<div class="glass rounded-2xl p-4 border border-white/10 min-w-0">' +
+    '<div class="text-[10px] uppercase tracking-wider text-slate-500">' + escapeHtml(k) + '</div>' +
+    '<div class="text-sm font-bold mt-1 truncate">' + v + '</div>' +
+    (sub ? '<div class="text-[10px] text-slate-400 mt-1">' + sub + '</div>' : '') +
+    '</div>';
+}
+function refreshDeployBoard() {
+  renderDeploy();
+  renderPublish();
+  fillDeployCards();
+}
+async function fillDeployCards() {
+  const box = document.getElementById('deploy-cards');
+  if (!box) return;
+  box.innerHTML = cardHtml('Worker', '…', 'checking') + cardHtml('Last ship', '…', '') + cardHtml('Vault', '…', '') + cardHtml('AI', '…', '');
+  try {
+    const st = await (await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/status')).json();
+    const last = st.last_deploy || {};
+    const when = last.at ? fmtWhen(last.at) : 'no ship yet';
+    const lastName = escapeHtml(last.name || last.action || 'git');
+    const lastUrl = last.url ? '<a class="underline text-pink-300" href="' + last.url + '" target="_blank" rel="noopener">open</a>' : '';
+    box.innerHTML =
+      cardHtml('Worker', escapeHtml(st.version || '—'), escapeHtml(st.service || 'heymia')) +
+      cardHtml('Last ship', lastName, when + (lastUrl ? ' · ' + lastUrl : '')) +
+      cardHtml('Vault', escapeHtml(st.vault || '—'), st.ok ? 'bound' : 'check binding') +
+      cardHtml('AI', escapeHtml(st.ai_model || '—'),
+        (st.grok === 'set' ? 'Grok on' : 'Grok off') + ' · ' + (st.gemini === 'set' ? 'Gemini on' : 'Gemini off'));
+    updateBuildBadge({ workUploaded: last.at, workActive: true });
+  } catch (e) {
+    box.innerHTML = cardHtml('Worker', 'unreachable', escapeHtml(e.message || 'fetch failed'));
+  }
 }
 async function renderPublish() {
   const statusEl = document.getElementById('publish-status');

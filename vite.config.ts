@@ -142,6 +142,23 @@ function authPopupPlugin(): Plugin {
   };
 }
 
+function editIsolationPlugin(): Plugin {
+  return {
+    name: "heymia-edit-isolation",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const raw = req.url ?? "";
+        const pathOnly = raw.split("?", 1)[0] ?? "";
+        if (pathOnly === "/edit.html" && !raw.includes("embed=1")) {
+          res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+          res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
+        }
+        next();
+      });
+    },
+  };
+}
+
 // `0.0.0.0:8080` is the live-preview contract — don't change host/port.
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
@@ -161,6 +178,7 @@ export default defineConfig(({ command, isPreview }) => ({
     pgliteBootstrapPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
     authPopupPlugin(),
+    editIsolationPlugin(),
     // Dev-only /__app-env, read by scripts/check-auth-invariant.mjs.
     appEnvPlugin(),
     // PWA head + ?install=1 tutorial page; runs before Start/Nitro.

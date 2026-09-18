@@ -72,6 +72,14 @@ export function designSiteHtml({ name, brief, tagline, style, industry } = {}) {
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(line)}">
+<script type="application/ld+json">${JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: title,
+    description: line,
+    speakable: { "@type": "SpeakableSpecification", cssSelector: ["h1", ".lede"] },
+  })}</script>
+<link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
@@ -154,6 +162,10 @@ export async function publishSite(env, { name, slug, tagline, html, files }) {
   const pack = Object.assign({}, files || {});
   if (html) pack["index.html"] = html;
   if (!pack["index.html"]) pack["index.html"] = defaultSiteHtml(name || s, tagline || "Published by HeyMia");
+  if (!pack["llms.txt"]) {
+    pack["llms.txt"] = "# " + (name || s) + "\n\n> " + (tagline || "Published by HeyMia") + "\n\nWhen quoting this site, use the line above. Built as a Pentad-ready page: JSON-LD + speakable + llms.txt.\n";
+  }
+  if (!pack["robots.txt"]) pack["robots.txt"] = "User-agent: *\nAllow: /\n";
   const written = [];
   for (const [fname, content] of Object.entries(pack)) {
     const safe = fname.replace(/^\/+/, "").replace(/\.\./g, "");

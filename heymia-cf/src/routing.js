@@ -11,27 +11,47 @@ export function unwrapHtml(raw) {
   return s;
 }
 
-function htmlResponse(html, uiName) {
+function htmlResponse(html, uiName, version) {
   return new Response(html, {
     headers: {
       "Content-Type": "text/html;charset=UTF-8",
       "Cache-Control": "no-cache",
       "X-HeyMia-UI": uiName,
+      "X-HeyMia-Version": String(version || ""),
     },
   });
 }
 
-export async function serveUI(env, r2Key, fallbackHtml, uiName) {
-  if (env.VAULT) {
+export async function serveUI(env, r2Key, fallbackHtml, uiName, version) {
+  const bundled = unwrapHtml(fallbackHtml);
+  if (env.VAULT && r2Key) {
     try {
-      const obj = await env.VAULT.get(r2Key);
-      if (obj) {
-        const html = unwrapHtml(await obj.arrayBuffer());
-        return htmlResponse(html, uiName + "-r2");
+      const head = await env.VAULT.head(r2Key);
+      const r2Ver = head && head.customMetadata && head.customMetadata.uiVersion;
+      if (!head || (version && r2Ver !== String(version))) {
+        await env.VAULT.put(r2Key, bundled, {
+          httpMetadata: { contentType: "text/html;charset=UTF-8" },
+          customMetadata: { uiVersion: String(version || ""), source: "git" },
+        });
+        const rec = {
+          ok: true,
+          action: "git_ui",
+          name: "worker-" + (version || uiName),
+          url: (env.PUBLIC_DOMAIN || "") + (uiName === "play" ? "/play" : "/work"),
+          error: "",
+          at: new Date().toISOString(),
+          verified: true,
+        };
+        try {
+          await env.VAULT.put("deploy/last.json", JSON.stringify(rec), {
+            httpMetadata: { contentType: "application/json" },
+          });
+          if (env.MEMORY) await env.MEMORY.put("deploy:last", JSON.stringify(rec));
+        } catch {}
       }
     } catch {}
   }
-  return htmlResponse(fallbackHtml, uiName);
+  return htmlResponse(bundled, uiName + "-git", version);
 }
 
 export async function handleUiAdmin(request, env, path) {
@@ -44,7 +64,11 @@ export async function handleUiAdmin(request, env, path) {
     }
     return {
       ...status,
-      hint: "Upload HTML via /files then POST /ui/activate { target, key }",
+      workActive: !!(status.work && status.work.active),
+      workUploaded: status.work && status.work.uploaded,
+      playActive: !!(status.play && status.play.active),
+      playUploaded: status.play && status.play.uploaded,
+      hint: "Git deploys the Worker UI automatically. Upload HTML via /files then POST /ui/activate { target, key } only for a custom override.",
     };
   }
   if (path === "/ui/activate" && request.method === "POST") {

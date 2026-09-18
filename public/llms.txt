@@ -1,0 +1,3 @@
+# Pentad
+
+> A Pentad is a living frame. The fifth dimension is a citation field so answer engines can quote the work without scraping.

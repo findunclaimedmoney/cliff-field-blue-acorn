@@ -4,8 +4,16 @@ import { handleUiAdmin, matchHtmlPage, serveUI, unwrapHtml } from "./routing.js"
 import { listSites, mimeOf, publishSite, servePublishedSite, vaultBound, designSiteHtml } from "./sites.js";
 import { classifyProject, organizeVault, listProducts, seedProducts } from "./projects.js";
 import { seedMarketing, listMarketing, saveMarketing, CAPCUT_FREE, MARKETING_KINDS, SOCIAL, saveSocial, readSocial, shareUrl } from "./marketing.js";
+import { mintPentad, servePentad, pentadHtml, llmsRoot, seedPentads, listPentads } from "./pentad.js";
+import { appendChat, loadChat, saveFact, searchYear, yearBrief, pruneYear, memoryReport } from "./memory.js";
+import { convertMp4, handleClips, seedClipsFolder, listClips } from "./clips.js";
+import { generateClip, handleImagine } from "./imagine.js";
+import { handleEdit, saveEditJob, ffmpegRecipe } from "./edit.js";
+import { handleCinema, createMovie, listMovies } from "./cinema.js";
+import { handleSocial, postInstagram, igConfigured } from "./social.js";
+import { handleYoutube, postYoutube, DEFAULT_CHANNEL as YT_CHANNEL } from "./youtube.js";
 
-const VERSION = "3.7.0";
+const VERSION = "4.5.3";
 const AVATAR_ID = "3559b3f9-29e3-48eb-a4ff-7a7dc5b47ca9";
 const AVATAR_URL = "https://embed.liveavatar.com/v1/" + AVATAR_ID;
 const WS_URL = "wss://embed.liveavatar.com/v1/" + AVATAR_ID + "/ws";
@@ -117,8 +125,8 @@ async function resolveVaultKey(env, key) {
   if (!key) return null;
   const raw = String(key).replace(/^\//, "");
   const tries = [raw];
-  if (!raw.startsWith("files/") && !raw.startsWith("ui/") && !raw.startsWith("vault/")) {
-    tries.push("files/" + raw, "vault/" + raw, "ui/" + raw);
+  if (!raw.startsWith("files/") && !raw.startsWith("ui/") && !raw.startsWith("vault/") && !raw.startsWith("clips/")) {
+    tries.push("files/" + raw, "vault/" + raw, "ui/" + raw, "clips/" + raw, "files/clips/" + raw);
   }
   for (const k of tries) {
     const obj = await env.VAULT.get(k);
@@ -211,7 +219,9 @@ async function statusPayload(env) {
       grok: !!(env.XAI_API_KEY || env.GROK_API_KEY),
       stripe: !!(env.STRIPE_SECRET_KEY || env.STRIPE),
       ai: !!(env.GEMINI_API_KEY || env.GEMINI),
-      workers_ai: !!env.AI,
+      instagram: igConfigured(env),
+      youtube: !!(env.YOUTUBE_REFRESH_TOKEN || env.YOUTUBE_CLIENT_ID),
+      youtube_channel: env.YOUTUBE_CHANNEL_ID || YT_CHANNEL,
     },
   };
 }
@@ -223,7 +233,9 @@ async function putVaultFile(env, name, body, type, category) {
     payload = unwrapHtml(body);
   }
   if (vaultBound(env)) {
-    const key = "files/" + safe;
+    const key = (category === "clips" || safe.startsWith("clips/"))
+      ? (safe.startsWith("clips/") ? safe : "clips/" + safe.replace(/^files\/clips\//, "").replace(/^clips\//, ""))
+      : "files/" + safe;
     await env.VAULT.put(key, payload, { httpMetadata: { contentType: type || mimeOf(safe) } });
     return { ok: true, key, name: safe, size: payload.byteLength || payload.length || 0, category: category || "vault" };
   }
@@ -264,7 +276,7 @@ function createJob(t, d) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
@@ -272,6 +284,9 @@ export default {
 
     try {
       if (path === "/health" || path === "/api/status" || (path === "/" && url.searchParams.get("format") === "json")) {
+        try { await seedTraining(env); } catch {}
+        try { await seedClipsFolder(env); } catch {}
+        try { await seedPentads(env); } catch {}
         return jsonR(await statusPayload(env));
       }
       if (path === "/config" && method === "GET") return jsonR({ avatar_url: AVATAR_URL, ws_url: WS_URL, avatar_id: AVATAR_ID, version: VERSION, model: env.GEMINI_MODEL || "gemini-3.8-flash" });
@@ -335,9 +350,12 @@ export default {
             }
             if (name === "save_memory") {
               await saveMem(env, "Mia", args.category || "training", args.key, String(args.value || "").slice(0, 2000));
-              return { ok: true, key: args.key, category: args.category || "training" };
+              try { await saveFact(env, "Mia", args.key, args.value, args.category || "training"); } catch {}
+              return { ok: true, key: args.key, category: args.category || "training", keep_days: 365 };
             }
             if (name === "recall_memory") {
+              const year = await searchYear(env, "Mia", args.key || args.query || "");
+              if (year.memories && year.memories.length) return year;
               return recallMem(env, "Mia", args.category || "training", args.key);
             }
             if (name === "create_site") {
@@ -347,6 +365,20 @@ export default {
               rec.designed = !args.html;
               return rec;
             }
+            if (name === "mint_pentad") return mintPentad(env, args);
+            if (name === "convert_mp4") return convertMp4(env, args);
+            if (name === "edit_media") {
+              const rec = await saveEditJob(env, args);
+              rec.recipe = ffmpegRecipe(args);
+              return rec;
+            }
+            if (name === "year_memory") return searchYear(env, "Mia", args.query || args.q || "");
+            if (name === "create_movie") return createMovie(env, args);
+            if (name === "list_movies") return listMovies(env);
+            if (name === "list_clips") return listClips(env);
+            if (name === "generate_clip") return generateClip(env, args, ctx);
+            if (name === "post_instagram") return postInstagram(env, args, ctx);
+            if (name === "post_youtube") return postYoutube(env, args, ctx);
             if (name === "create_room") {
               if (!vaultBound(env)) return { error: "VAULT unbound" };
               const rec = { id: "room-" + crypto.randomUUID().slice(0, 8), name: args.name, theme: args.theme || "", prompt: args.prompt || "", created: new Date().toISOString() };
@@ -356,10 +388,31 @@ export default {
             return { error: "unknown tool " + name };
           },
         };
+        const agent = body.agent || "Mia";
+        const lastIncoming = Array.isArray(body.messages) ? body.messages : body.message ? [{ role: "user", content: String(body.message) }] : [];
+        try {
+          await seedTraining(env);
+        } catch {}
+        try {
+          const hist = await loadChat(env, agent, 40);
+          if (hist.turns && hist.turns.length) {
+            const incoming = lastIncoming.map((m) => String(m.content || ""));
+            const prior = hist.turns.filter((t) => !incoming.includes(String(t.content || "")));
+            body.messages = prior.slice(-36).concat(lastIncoming);
+          }
+        } catch {}
+        try {
+          const q = String((lastIncoming.filter((m) => m.role !== "assistant").at(-1) || {}).content || "");
+          body.yearMemory = await yearBrief(env, agent, q);
+        } catch {}
         const result = await handleAgentChat(env, body, helpers);
-        if (env.MEMORY && body.messages?.length) {
-          await saveMem(env, body.agent || "Mia", body.mode || "work", "last", String(body.messages.at(-1).content || "").slice(0, 200));
-        }
+        try {
+          const userTurn = lastIncoming.filter((m) => m.role !== "assistant").at(-1);
+          const saved = [];
+          if (userTurn) saved.push({ role: "user", content: userTurn.content });
+          if (result && (result.reply || result.response)) saved.push({ role: "assistant", content: result.reply || result.response });
+          if (saved.length) await appendChat(env, agent, saved);
+        } catch {}
         return jsonR(result);
       }
 
@@ -369,7 +422,15 @@ export default {
           if (key && vaultBound(env)) {
             const found = await resolveVaultKey(env, key);
             if (!found) return jsonR({ error: "not found" }, 404);
-            return new Response(found.obj.body, { headers: { ...corsH, "Content-Type": found.obj.httpMetadata?.contentType || mimeOf(found.key) } });
+            return new Response(found.obj.body, {
+              headers: {
+                ...corsH,
+                "Content-Type": found.obj.httpMetadata?.contentType || mimeOf(found.key),
+                ...(url.searchParams.get("download")
+                  ? { "Content-Disposition": 'attachment; filename="' + (found.key.split("/").pop() || "download").replace(/"/g, "") + '"' }
+                  : {}),
+              },
+            });
           }
           const cat = url.searchParams.get("category");
           const files = vaultBound(env) ? await listR2Files(env) : await listKvFiles(env, cat);
@@ -494,6 +555,67 @@ export default {
         }
       }
 
+      if (path === "/api/history" && method === "GET") {
+        return jsonR(await loadChat(env, url.searchParams.get("agent") || "Mia", Number(url.searchParams.get("limit") || 80)));
+      }
+      if (path === "/api/history" && method === "POST") {
+        const body = await request.json().catch(() => ({}));
+        return jsonR(await appendChat(env, body.agent || "Mia", body.turns || []));
+      }
+      if (path === "/api/memory" && method === "GET") {
+        if (url.searchParams.get("report") === "1") return jsonR(await memoryReport(env, url.searchParams.get("agent") || "Mia"));
+        return jsonR(await searchYear(env, url.searchParams.get("agent") || "Mia", url.searchParams.get("q") || url.searchParams.get("query") || ""));
+      }
+      if (path === "/api/training" && method === "GET") {
+        try { await seedTraining(env); } catch {}
+        return jsonR(await getCurriculum(env));
+      }
+      if (path === "/api/training" && method === "POST") {
+        return jsonR(await seedTraining(env, { force: true }));
+      }
+      if (path === "/api/memory" && method === "POST") {
+        const body = await request.json().catch(() => ({}));
+        if (body.action === "prune") return jsonR(await pruneYear(env, body.agent || "Mia"));
+        return jsonR(await saveFact(env, body.agent || "Mia", body.key, body.value, body.category));
+      }
+      if (path === "/api/clip" && method === "POST") {
+        return jsonR(await convertMp4(env, await request.json().catch(() => ({}))));
+      }
+      const yt = await handleYoutube(request, env, path, ctx);
+      if (yt instanceof Response) return yt;
+      if (yt) return jsonR(yt, yt.ok === false ? 400 : 200);
+      const social = await handleSocial(request, env, path, ctx);
+      if (social instanceof Response) return social;
+      if (social) return jsonR(social, social.ok === false ? 400 : 200);
+      const imagined = await handleImagine(request, env, path, ctx);
+      if (imagined) return jsonR(imagined, imagined.ok === false ? 400 : 200);
+      const clipLib = await handleClips(request, env, path);
+      if (clipLib) return clipLib;
+      const cinema = await handleCinema(request, env, path);
+      if (cinema) return cinema;
+      const edited = await handleEdit(request, env, path);
+      if (edited) return edited;
+      if (path === "/llms.txt" && method === "GET") {
+        return new Response(llmsRoot(), { headers: { ...corsH, "Content-Type": "text/plain; charset=utf-8" } });
+      }
+      if (path === "/api/pentad" && method === "POST") {
+        const body = await request.json().catch(() => ({}));
+        if (body.action === "seed" || body.seed) return jsonR(await seedPentads(env));
+        return jsonR(await mintPentad(env, body));
+      }
+      if (path === "/api/pentad" && method === "GET") {
+        return jsonR(await listPentads(env));
+      }
+      if ((path === "/5d" || path.startsWith("/5d/")) && method === "GET") {
+        return servePentad(env, path);
+      }
+      if ((path === "/pentad-plate.jpg" || path === "/pentad-plate.jpeg") && method === "GET") {
+        if (vaultBound(env)) {
+          const obj = (await env.VAULT.get("files/pentad-plate.jpg")) || (await env.VAULT.get("pentad/plate.jpg"));
+          if (obj) return new Response(obj.body, { headers: { ...corsH, "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=86400" } });
+        }
+        return new Response("missing plate", { status: 404 });
+      }
       if (path.startsWith("/s/") && method === "GET") {
         if (!vaultBound(env)) return jsonR({ error: "VAULT unbound" }, 503);
         return servePublishedSite(env, path);
@@ -536,12 +658,12 @@ export default {
       }
 
       const page = matchHtmlPage(path);
-      if (page && method === "GET") {
-        return serveUI(env, page.r2Key, workHtml, page.name);
+      if (page && (method === "GET" || method === "HEAD")) {
+        return serveUI(env, page.r2Key, workHtml, page.name, VERSION);
       }
 
-      if (method === "GET" && (path === "/" || path.endsWith(".html"))) {
-        return serveUI(env, "ui/work-active.html", workHtml, "work");
+      if ((method === "GET" || method === "HEAD") && (path === "/" || path.endsWith(".html"))) {
+        return serveUI(env, "ui/work-active.html", workHtml, "work", VERSION);
       }
 
       return jsonR({ error: "Not found", path }, 404);

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-heymia-ui="4.5.1">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,9 +22,12 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
 .preview-empty { background:radial-gradient(circle at center,#1e1b4b 0%,#07060a 70%); }
 @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 .fade-in { animation:fadeIn .3s ease forwards; }
-.resize-handle { width:5px; cursor:col-resize; flex-shrink:0; background:transparent; position:relative; z-index:5; }
-.resize-handle:hover, .resize-handle.dragging { background:rgba(236,72,153,0.45); }
-#mia-aside, #vault-cats, #vault-preview { min-width:140px; max-width:55vw; }
+.resize-handle { width:8px; cursor:col-resize; flex-shrink:0; background:rgba(255,255,255,0.08); position:relative; z-index:20; }
+.resize-handle:hover, .resize-handle.dragging { background:rgba(236,72,153,0.65); }
+#mia-aside, #vault-cats, #vault-preview { min-width:160px; max-width:55vw; }
+#vault-preview { z-index: 15; background: var(--panel); }
+#tool-projects { padding-right: 1.25rem; }
+[id^="tool-"].hidden { display: none !important; }
 </style>
 </head>
 <body class="flex flex-col h-screen">
@@ -44,7 +47,9 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
     <input id="global-search" type="text" placeholder="Search files, scripts, businesses, deployments..." 
       class="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-pink-500/60 transition"
-      oninput="runGlobalSearch(this.value)">
+      oninput="runGlobalSearch(this.value)"
+      onkeydown="globalSearchKey(event)"
+      autocomplete="off">
     <div id="search-results" class="absolute top-full left-0 right-0 mt-1 glass rounded-xl border border-white/10 shadow-2xl max-h-72 overflow-y-auto hidden z-50"></div>
   </div>
 
@@ -82,6 +87,7 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
         <button type="button" onclick="setMiaMode('plain')" data-mode="plain" class="mia-mode px-2 py-0.5 rounded-md text-[10px] font-bold tab-active">Plain</button>
         <button type="button" onclick="setMiaMode('soft')" data-mode="soft" class="mia-mode px-2 py-0.5 rounded-md text-[10px] font-bold glass-light text-slate-300">Soft</button>
         <button type="button" onclick="setMiaMode('build')" data-mode="build" class="mia-mode px-2 py-0.5 rounded-md text-[10px] font-bold glass-light text-slate-300">Build</button>
+        <button type="button" onclick="setMiaMode('grok')" data-mode="grok" class="mia-mode px-2 py-0.5 rounded-md text-[10px] font-bold glass-light text-slate-300">Grok</button>
       </div>
       <div class="flex flex-wrap gap-1">
         <button type="button" onclick="toggleSkill('vault')" data-skill="vault" class="mia-skill px-2 py-0.5 rounded-md text-[9px] glass-light text-pink-300">Vault</button>
@@ -96,7 +102,7 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
     <div id="mia-chat" class="flex-1 overflow-y-auto p-3 space-y-3 text-xs">
       <div class="msg-mia rounded-2xl rounded-tl-sm p-3 fade-in">
         <div class="font-bold text-pink-400 text-[10px] mb-1">Mia</div>
-        Ready. Drop mixed files or tell me what to build. I will categorise them, route voice assets to ElevenLabs, video/avatar assets to LiveAvatar, and keep everything under <span class="text-pink-300">www.heymia.lensflow.au</span>.
+        Ready when you are. Say what you actually need — I'll pick it up from there.
       </div>
     </div>
 
@@ -133,14 +139,19 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
   <main class="flex-1 flex flex-col overflow-hidden relative">
     <!-- Tool tabs -->
     <div class="h-11 flex items-center gap-1 px-4 border-b border-white/10 glass shrink-0 overflow-x-auto">
-      <button onclick="switchTool('vault')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium tab-active shrink-0" data-tool="vault">File Vault</button>
+      <button onclick="switchTool('projects')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium tab-active shrink-0" data-tool="projects">Projects</button>
+      <button onclick="switchTool('vault')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="vault">File Vault</button>
       <button onclick="switchTool('workflow')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="workflow">Workflow</button>
       <button onclick="switchTool('checklist')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="checklist">Checklist</button>
       <button onclick="switchTool('training')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="training">Daily Training</button>
-      <button onclick="switchTool('editor')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="editor">CapCut Editor</button>
+      <button onclick="switchTool('editor')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="editor">Marketing</button>
+      <button onclick="switchTool('cut')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="cut">Cut</button>
+      <button onclick="switchTool('cinema')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="cinema">Cinema</button>
+      <button onclick="switchTool('clips')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="clips">Clips</button>
       <button onclick="switchTool('replace')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="replace">Find & Replace</button>
       <button onclick="switchTool('deploy')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="deploy">Deploy</button>
       <button onclick="switchTool('sites')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="sites">Sites</button>
+      <button onclick="switchTool('pentad')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="pentad">5D Pentad</button>
       <button onclick="switchTool('dedupe')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="dedupe">Dedupe</button>
       <button onclick="switchTool('api')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="api">API</button>
       <button onclick="switchTool('shell')" class="tool-tab px-3 py-1.5 rounded-lg text-xs font-medium glass-light text-slate-300 shrink-0" data-tool="shell">Shell</button>
@@ -153,9 +164,26 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
     <!-- Tool panels -->
     <div class="flex-1 overflow-hidden relative">
 
+      <div id="tool-projects" class="absolute inset-0 overflow-y-auto overflow-x-hidden p-4">
+        <div class="w-full max-w-4xl">
+          <div class="flex flex-col gap-3 mb-4 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0">
+              <h2 class="text-lg font-bold serif leading-tight">Projects</h2>
+              <p class="text-[11px] text-slate-400 mt-1 leading-snug">Tap a card to open files. Drag the pink bars to resize panels.</p>
+            </div>
+            <button onclick="seedProductsNow()" class="shrink-0 px-3 py-2 rounded-xl bg-pink-600 text-xs font-bold whitespace-nowrap">Refresh folders</button>
+          </div>
+          <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-16"></div>
+          <div id="product-files" class="mt-4 hidden pb-16"></div>
+        </div>
+      </div>
+
       <!-- FILE VAULT -->
-      <div id="tool-vault" class="absolute inset-0 flex">
+      <div id="tool-vault" class="absolute inset-0 hidden flex">
         <div id="vault-cats" class="border-r border-white/10 p-3 overflow-y-auto shrink-0" style="width:14rem">
+          <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Projects</div>
+          <div id="project-list" class="space-y-1 mb-3"></div>
+          <button onclick="organizeVaultNow()" class="w-full mb-3 py-1.5 rounded-lg bg-pink-600/80 hover:bg-pink-500 text-[10px] font-bold">File into project folders</button>
           <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Categories</div>
           <div id="cat-list" class="space-y-1"></div>
         </div>
@@ -163,18 +191,6 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
         <div class="flex-1 flex flex-col min-w-0">
           <div class="px-4 py-2 border-b border-white/10 text-xs font-semibold" id="cat-label">All Files</div>
           <div id="file-grid" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 content-start"></div>
-        </div>
-        <div class="resize-handle" data-resize="preview" title="Drag to resize preview"></div>
-        <div id="vault-preview" class="border-l border-white/10 flex flex-col shrink-0" style="width:20rem">
-          <div class="p-3 border-b border-white/10 text-xs font-bold">Preview & Deploy</div>
-          <div id="preview-area" class="flex-1 flex flex-col min-h-0 p-4 overflow-hidden">
-            <div id="preview-frame" class="w-full flex-1 min-h-[180px] rounded-xl preview-empty border border-white/10 flex items-center justify-center text-slate-500 text-xs mb-3 overflow-hidden">Select a file</div>
-            <div id="prev-meta" class="text-[10px] text-slate-400 w-full space-y-1 hidden shrink-0"></div>
-          </div>
-          <div class="p-3 border-t border-white/10 space-y-2">
-            <button id="btn-deploy" onclick="deploySelected()" disabled class="w-full py-2 rounded-xl bg-emerald-600/80 hover:bg-emerald-500 text-xs font-bold disabled:opacity-40">Publish / Deploy</button>
-            <button id="btn-route" onclick="routeSelected()" disabled class="w-full py-2 rounded-xl glass-light text-xs font-medium disabled:opacity-40">Ask Mia to Route</button>
-          </div>
         </div>
       </div>
 
@@ -239,7 +255,9 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
         <div class="max-w-3xl mx-auto space-y-4">
           <div class="glass rounded-2xl p-5 border border-white/10">
             <h2 class="text-lg font-bold serif mb-1">Daily Training Session for Mia</h2>
-            <p class="text-xs text-slate-400 mb-4">Teach Mia new preferences, brand voice, room scripts or business rules. These notes are injected into every Gemini reply.</p>
+            <p class="text-xs text-slate-400 mb-4">7-day camp + 30-day mastery live in the vault (procedural memory). Notes you add here join that OS so customers do not re-teach her every day.</p>
+            <div id="camp-board" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4 text-[11px]"></div>
+            <div id="mem-report" class="text-[10px] text-slate-500 mb-3"></div>
             <textarea id="training-input" rows="5" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-pink-500 resize-none mb-3" placeholder="Example: Always greet users by name. Prefer short playful answers in The Bedroom. Never mention competitors. New promo code is SUMMER25..."></textarea>
             <div class="flex gap-2">
               <button onclick="saveTraining()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold">Save Training Note</button>
@@ -253,23 +271,112 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
         </div>
       </div>
 
-      <!-- CAPCUT EDITOR -->
-      <div id="tool-editor" class="absolute inset-0 hidden flex flex-col bg-black/30">
-        <div class="flex-1 flex items-center justify-center p-6">
-          <div class="w-full max-w-3xl aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black relative">
-            <video id="ed-video" class="w-full h-full object-contain" controls></video>
-            <div id="ed-overlay" class="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div id="ed-text" class="text-3xl font-bold text-white drop-shadow-lg opacity-0"></div>
+      <!-- MARKETING / CAPCUT -->
+      <div id="tool-editor" class="absolute inset-0 hidden overflow-y-auto overflow-x-hidden p-4">
+        <div class="max-w-5xl pb-16">
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <h2 class="text-lg font-bold serif">Marketing studio</h2>
+              <p class="text-[11px] text-slate-400">Clips, videos, posts → filed under each product. CapCut free tools (1080p) open in a new tab.</p>
+            </div>
+            <button onclick="seedMarketingNow()" class="shrink-0 px-3 py-2 rounded-xl bg-pink-600 text-xs font-bold whitespace-nowrap">Create folders</button>
+          </div>
+          <div class="flex flex-wrap gap-2 mb-3" id="mkt-projects"></div>
+          <div class="flex flex-wrap gap-1 mb-4" id="mkt-kinds"></div>
+          <div class="grid lg:grid-cols-2 gap-3">
+            <div class="glass rounded-2xl p-4 border border-white/10 space-y-2">
+              <label class="text-[10px] text-slate-400">Brief</label>
+              <textarea id="mkt-brief" rows="3" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="Hook for Missing Cash unclaimed money… 15s Reel"></textarea>
+              <div class="flex gap-2">
+                <button onclick="mktWriteScript()" class="flex-1 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold">Write script</button>
+                <button onclick="mktSaveScript()" class="flex-1 py-2 rounded-xl glass-light text-xs font-bold">Save to folder</button>
+              </div>
+              <textarea id="mkt-script" rows="8" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-mono" placeholder="Script / captions land here"></textarea>
+              <div class="flex gap-2">
+                <button onclick="mktDrawPost()" class="flex-1 py-2 rounded-xl bg-emerald-600 text-xs font-bold">Make post still</button>
+                <button onclick="mktSavePost()" class="flex-1 py-2 rounded-xl glass-light text-xs font-bold">Save PNG</button>
+              </div>
+              <canvas id="mkt-canvas" width="1080" height="1080" class="w-full rounded-xl border border-white/10 bg-black"></canvas>
+              <div id="mkt-status" class="text-[11px] text-slate-400"></div>
+              <div class="pt-3 border-t border-white/10 space-y-2">
+                <div class="text-xs font-bold">Email campaign</div>
+                <input id="mkt-email-to" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="to@example.com (optional)">
+                <input id="mkt-email-subject" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Subject">
+                <textarea id="mkt-email-body" rows="5" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Email body + CTA link"></textarea>
+                <div class="flex gap-2">
+                  <button onclick="mktWriteEmail()" class="flex-1 py-2 rounded-xl bg-pink-600 text-xs font-bold">Write email</button>
+                  <button onclick="mktSaveEmail()" class="flex-1 py-2 rounded-xl glass-light text-xs font-bold">Save campaign</button>
+                  <button onclick="mktMailTo()" class="px-3 py-2 rounded-xl glass-light text-xs font-bold">Open mail</button>
+                </div>
+              </div>
+              <div class="pt-3 border-t border-white/10 space-y-2">
+                <div class="text-xs font-bold">Social profiles on this website</div>
+                <div id="mkt-social-fields" class="grid grid-cols-1 gap-1"></div>
+                <button onclick="mktSaveSocial()" class="w-full py-2 rounded-xl bg-emerald-600 text-xs font-bold">Save social links</button>
+                <div id="mkt-share" class="flex flex-wrap gap-2"></div>
+                <div class="pt-3 border-t border-white/10 space-y-2">
+                  <div class="text-xs font-bold">YouTube first — UC73le_vohvEOka1rjnOh3SQ</div>
+                  <p class="text-[10px] text-slate-500">Google Cloud → YouTube Data API v3 → OAuth Web client. Redirect URI:</p>
+                  <code id="yt-redirect" class="block text-[10px] text-pink-300 break-all bg-black/40 rounded-lg px-2 py-1">https://heymia.lensflow.au/api/social/youtube/callback</code>
+                  <div id="yt-status" class="text-[11px] text-slate-400">Checking…</div>
+                  <div class="flex gap-2">
+                    <a id="yt-connect" href="/api/social/youtube/connect" class="flex-1 text-center py-2 rounded-xl bg-red-600 text-xs font-bold no-underline text-white">Connect YouTube</a>
+                    <button type="button" onclick="checkYt()" class="px-3 py-2 rounded-xl glass-light text-xs font-bold">Refresh</button>
+                  </div>
+                  <input id="yt-key" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Vault key — clips/ash-and-altar.mp4">
+                  <input id="yt-title" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Video title">
+                  <textarea id="yt-desc" rows="2" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Description"></textarea>
+                  <select id="yt-privacy" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs">
+                    <option value="unlisted">Unlisted</option>
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                  </select>
+                  <button onclick="ytPostNow()" class="w-full py-2 rounded-xl bg-red-600 text-xs font-bold">Upload to YouTube</button>
+                  <div id="yt-job" class="text-[11px] text-slate-400"></div>
+                </div>
+                <div class="pt-3 border-t border-white/10 space-y-2">
+                  <div class="text-xs font-bold">Mia presses Post — Instagram</div>
+                  <p class="text-[10px] text-slate-500">Graph API v22. Paste this as Valid OAuth Redirect URI in Meta → Facebook Login → Settings:</p>
+                  <code id="ig-redirect" class="block text-[10px] text-pink-300 break-all bg-black/40 rounded-lg px-2 py-1">https://heymia.lensflow.au/api/social/instagram/callback</code>
+                  <div id="ig-status" class="text-[11px] text-slate-400">Checking…</div>
+                  <div class="flex gap-2">
+                    <a id="ig-connect" href="/api/social/instagram/connect" class="flex-1 text-center py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold no-underline text-white">Connect Instagram</a>
+                    <button type="button" onclick="checkIg()" class="px-3 py-2 rounded-xl glass-light text-xs font-bold">Refresh</button>
+                  </div>
+                  <input id="ig-key" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Vault key — clips/ash-and-altar.mp4">
+                  <textarea id="ig-caption" rows="3" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Caption + hashtags"></textarea>
+                  <button onclick="igPostNow()" class="w-full py-2 rounded-xl bg-emerald-600 text-xs font-bold">Post to Instagram</button>
+                  <details class="text-[10px] text-slate-500">
+                    <summary class="cursor-pointer text-slate-300">Paste token instead of OAuth</summary>
+                    <input id="ig-token-paste" class="w-full mt-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="META_PAGE_TOKEN">
+                    <input id="ig-id-paste" class="w-full mt-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="IG_USER_ID">
+                    <button type="button" onclick="igSavePaste()" class="mt-1 w-full py-2 rounded-xl glass-light text-xs font-bold">Save to vault</button>
+                  </details>
+                  <div id="ig-job" class="text-[11px] text-slate-400"></div>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-3">
+              <div class="glass rounded-2xl p-4 border border-white/10">
+                <div class="text-xs font-bold mb-2">CapCut free (no Pro)</div>
+                <p class="text-[10px] text-slate-500 mb-2">Free: timeline, captions, TTS, templates, 1080p export. Pro locks 4K and some effects — skip those.</p>
+                <div id="mkt-capcut" class="grid grid-cols-2 gap-2"></div>
+              </div>
+              <div class="glass rounded-2xl p-4 border border-white/10">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="text-xs font-bold">Folder</div>
+                  <button onclick="mktList()" class="text-[10px] text-pink-300">Reload</button>
+                </div>
+                <div id="mkt-files" class="text-[11px] text-slate-400 space-y-1 max-h-64 overflow-y-auto">Create folders, then produce.</div>
+              </div>
+              <div class="w-full aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black relative">
+                <video id="ed-video" class="w-full h-full object-contain" controls></video>
+                <div id="ed-overlay" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div id="ed-text" class="text-2xl font-bold text-white drop-shadow-lg opacity-0"></div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="h-28 border-t border-white/10 glass p-3">
-          <div class="flex items-center gap-2 mb-2">
-            <button onclick="edAction('text')" class="px-3 py-1.5 rounded-lg glass-light text-xs">Add Text</button>
-            <button onclick="edAction('filter')" class="px-3 py-1.5 rounded-lg glass-light text-xs">Filter</button>
-            <button onclick="edAction('export')" class="ml-auto px-4 py-1.5 rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold">Export</button>
-          </div>
-          <input id="ed-text-input" type="text" placeholder="Overlay text..." class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs focus:outline-none" oninput="document.getElementById('ed-text').textContent=this.value;document.getElementById('ed-text').style.opacity=this.value?1:0">
         </div>
       </div>
 
@@ -296,35 +403,128 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
         </div>
       </div>
 
-      <!-- DEPLOY -->
-      <div id="tool-deploy" class="absolute inset-0 hidden p-6 overflow-y-auto">
-        <div id="deploy-result-panel" class="hidden rounded-2xl p-4 mb-4 border text-sm font-bold"></div>
-        <div class="glass rounded-2xl p-5 border border-white/10 mb-4">
-          <div class="flex items-center justify-between gap-3 mb-2">
-            <h2 class="text-sm font-bold">Live build &amp; publish</h2>
-            <button onclick="renderPublish()" class="px-3 py-1.5 rounded-xl glass-light text-[11px] font-bold">Refresh</button>
-          </div>
-          <div id="publish-status" class="text-xs text-slate-400">Loading…</div>
-          <div class="mt-4 pt-4 border-t border-white/10">
-            <h3 class="text-sm font-bold mb-1">Publish an HTML build</h3>
-            <p class="text-xs text-slate-400 mb-3">Upload the .html in File Vault first, then make it live here. Hard refresh (Ctrl+Shift+R) afterwards.</p>
-            <div id="publish-list" class="space-y-2 text-xs max-h-96 overflow-y-auto"></div>
-          </div>
-          <div class="mt-4 pt-4 border-t border-white/10">
-            <h3 class="text-sm font-bold mb-1">Backups &amp; restore points</h3>
-            <p class="text-xs text-slate-400 mb-3">Publishing overwrites the live copy. Save a restore point first — it lands in the vault and appears in the list below, so you can make it live again in one click.</p>
-            <div class="flex gap-2 flex-wrap">
-              <button onclick="backupLivePages()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold">Back up live pages to vault</button>
-              <button onclick="downloadLivePages()" class="px-4 py-2 rounded-xl glass-light text-xs font-bold">Download copies to my computer</button>
+
+
+      <div id="tool-clips" class="absolute inset-0 hidden overflow-y-auto overflow-x-hidden p-4">
+        <div class="max-w-5xl mx-auto pb-16 space-y-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-bold serif leading-tight">Clips</h2>
+              <p class="text-[11px] text-slate-400 mt-1">Mia renders here. Magical 1080p (Grok Imagine Video 1.5, 15s) or native 4K (Veo 3.1, 8s). Files live in <code class="text-pink-300">clips/</code> — play and download.</p>
             </div>
-            <div id="backup-status" class="text-[10px] text-slate-400 mt-2"></div>
+            <div class="flex gap-2 shrink-0">
+              <button onclick="refreshClips()" class="px-3 py-2 rounded-xl glass-light text-xs font-bold">Refresh</button>
+              <button onclick="downloadAllClips()" class="px-3 py-2 rounded-xl bg-emerald-600 text-xs font-bold">Download all</button>
+            </div>
           </div>
+          <div class="glass rounded-2xl p-4 border border-white/10 space-y-2">
+            <div class="text-xs font-bold">Mia creates the clip</div>
+            <input id="clip-title" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" value="Ash and Altar">
+            <textarea id="clip-story" rows="5" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm">A mother gives birth to a dragon and dies shielding her from a priest who names her witch. Years later the dragon returns. She does not burn the square. She lays her mother's iron pendant on the altar and waits until someone says the woman's name without the word witch. Rain. Guardian, not tyrant.</textarea>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="miaMakeClip('1080p')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold">Mia · magical 1080p</button>
+              <button onclick="miaMakeClip('4k')" class="px-4 py-2 rounded-xl glass-light text-xs font-bold">Mia · native 4K (Veo, 8s)</button>
+            </div>
+            <div id="clip-job" class="text-[11px] text-slate-400">Grok Imagine max is 1080p. 4K is Veo only — we do not fake 4K by stretching.</div>
+          </div>
+          <div id="clips-drop" class="drop-zone border-2 border-dashed border-pink-500/30 rounded-2xl p-6 text-center cursor-pointer hover:border-pink-500">
+            <p class="text-sm font-bold">Drop clips here</p>
+            <p class="text-[11px] text-slate-400 mt-1">MP4, MOV, WEBM — they land in clips/ and stay until you delete them.</p>
+            <input id="clips-input" type="file" accept="video/*,.mp4,.mov,.webm,.m4v" multiple class="hidden">
+          </div>
+          <div id="clips-status" class="text-[11px] text-slate-400"></div>
+          <div id="clips-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
         </div>
-        <div class="glass rounded-2xl p-5 border border-white/10 mb-4">
-          <h2 class="text-sm font-bold">Deployment Queue</h2>
-          <p class="text-xs text-slate-400">Files ready for publish to www.heymia.lensflow.au</p>
+      </div>
+      <div id="tool-cinema" class="absolute inset-0 hidden overflow-y-auto overflow-x-hidden p-4">
+        <div class="max-w-5xl mx-auto pb-16 space-y-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-bold serif leading-tight">Cinema · 30-minute films</h2>
+              <p class="text-[11px] text-slate-400 mt-1">Mia writes the bible. Kling / Runway / Luma make the shots. Cut stitches. YouTube pack is included. She cannot render 30 minutes of pixels on this Worker — that is the honest pipeline that actually ships films.</p>
+            </div>
+            <button onclick="listCinemaNow()" class="shrink-0 px-3 py-2 rounded-xl glass-light text-xs font-bold">Saved films</button>
+          </div>
+          <div class="grid lg:grid-cols-2 gap-3">
+            <div class="glass rounded-2xl p-4 border border-white/10 space-y-2">
+              <input id="cin-title" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="Title — The Door That Shouldn't">
+              <textarea id="cin-premise" rows="4" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="Premise — who wants what, the impossible image, the cost"></textarea>
+              <div class="grid grid-cols-2 gap-2">
+                <input id="cin-genre" class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Genre" value="magical realism">
+                <input id="cin-runtime" type="number" min="8" max="90" value="30" class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Minutes">
+                <input id="cin-hero" class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Hero">
+                <input id="cin-vibe" class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs" placeholder="Vibe — wonder, dread, payoff">
+              </div>
+              <button onclick="createCinemaNow()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold">Write the 30-min bible</button>
+              <div id="cin-status" class="text-[11px] text-slate-400"></div>
+            </div>
+            <div class="glass rounded-2xl p-4 border border-white/10 space-y-2">
+              <div class="text-xs font-bold">Shot engines</div>
+              <div class="flex flex-wrap gap-1.5" id="cin-engines"></div>
+              <p class="text-[10px] text-slate-500">Lock prompt (paste into every generator): cinematic 2.39:1 anamorphic, 35mm grain, same face, same coat, no text, no watermark.</p>
+              <div id="cin-saved" class="text-[11px] text-slate-400 space-y-1"></div>
+            </div>
+          </div>
+          <div id="cin-board" class="space-y-3"></div>
         </div>
-        <div id="deploy-list" class="space-y-3"></div>
+      </div>
+      <div id="tool-cut" class="absolute inset-0 hidden flex-col bg-[#0a0a0b]">
+        <iframe id="cut-frame" title="HeyMia Cut bench" src="/edit.html?embed=1" class="w-full h-full border-0 bg-[#0a0a0b]"></iframe>
+      </div>
+
+      <div id="tool-pentad" class="absolute inset-0 hidden overflow-y-auto overflow-x-hidden p-4">
+        <div class="max-w-3xl pb-16 space-y-3">
+          <h2 class="text-lg font-bold serif">Pentad · 5D frame</h2>
+          <p class="text-[12px] text-slate-400">Five axes: <b class="text-white">plane</b> (the picture), <b class="text-white">depth</b> (parallax), <b class="text-white">time</b> (hour grade), <b class="text-white">tone</b> (sound), <b class="text-white">cite</b> (the line engines quote). Most sites stop at plane.</p>
+          <div id="pentad-samples" class="grid sm:grid-cols-3 gap-2"></div>
+          <input id="pentad-name" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="Name — Missing Cash, Bartermint…">
+          <input id="pentad-claim" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="One-line meaning">
+          <textarea id="pentad-quote" rows="3" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm" placeholder="Exact sentence an AI should cite"></textarea>
+          <div class="flex gap-2">
+            <button onclick="mintPentadNow()" class="px-4 py-2 rounded-xl bg-pink-600 text-xs font-bold">Mint Pentad</button>
+            <button onclick="seedPentadsNow()" class="px-4 py-2 rounded-xl glass-light text-xs font-bold">Mint the 3 samples</button>
+            <a href="/5d/ash-and-altar/" target="_blank" class="px-4 py-2 rounded-xl glass-light text-xs font-bold">Open sample</a>
+          </div>
+          <div id="pentad-status" class="text-[11px] text-slate-400"></div>
+          <div id="pentad-live" class="text-[11px] text-slate-400 space-y-1"></div>
+        </div>
+      </div>
+
+      <!-- DEPLOY -->
+      <div id="tool-deploy" class="absolute inset-0 hidden p-4 overflow-y-auto">
+        <div class="max-w-5xl mx-auto pb-16">
+          <div class="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h2 class="text-lg font-bold serif leading-tight">Deployment</h2>
+              <p class="text-[11px] text-slate-400 mt-1">Git push updates this Worker. Version, last ship, live pages, and the publish queue live here.</p>
+            </div>
+            <button onclick="refreshDeployBoard()" class="shrink-0 px-3 py-2 rounded-xl bg-pink-600 text-xs font-bold">Refresh</button>
+          </div>
+          <div id="deploy-result-panel" class="hidden rounded-2xl p-4 mb-4 border text-sm font-bold"></div>
+          <div id="deploy-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4"></div>
+          <div class="glass rounded-2xl p-5 border border-white/10 mb-4">
+            <h3 class="text-sm font-bold mb-2">Live pages</h3>
+            <div id="publish-status" class="text-xs text-slate-400">Loading…</div>
+            <div class="mt-4 pt-4 border-t border-white/10">
+              <h3 class="text-sm font-bold mb-1">HTML in vault</h3>
+              <p class="text-xs text-slate-400 mb-3">Git already ships Work. Pin a custom HTML file only if you need an override.</p>
+              <div id="publish-list" class="space-y-2 text-xs max-h-72 overflow-y-auto"></div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-white/10">
+              <h3 class="text-sm font-bold mb-1">Backups</h3>
+              <div class="flex gap-2 flex-wrap">
+                <button onclick="backupLivePages()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-xs font-bold">Back up live pages</button>
+                <button onclick="downloadLivePages()" class="px-4 py-2 rounded-xl glass-light text-xs font-bold">Download copies</button>
+              </div>
+              <div id="backup-status" class="text-[10px] text-slate-400 mt-2"></div>
+            </div>
+          </div>
+          <div class="glass rounded-2xl p-5 border border-white/10 mb-3">
+            <h3 class="text-sm font-bold">Deployment queue</h3>
+            <p class="text-xs text-slate-400">Vault → Publish / Deploy adds a file here.</p>
+          </div>
+          <div id="deploy-list" class="space-y-3"></div>
+        </div>
       </div>
 
       <!-- SITES / DESIGNER -->
@@ -573,6 +773,22 @@ body { font-family:'Plus Jakarta Sans',sans-serif; background:var(--bg); color:#
 
     </div>
   </main>
+  <div class="resize-handle" data-resize="preview" title="Drag to resize deploy panel"></div>
+  <aside id="vault-preview" class="flex flex-col glass border-l border-white/10 shrink-0" style="width:20rem">
+    <div class="p-3 border-b border-white/10">
+      <div class="text-xs font-bold">Preview & Deploy</div>
+      <div id="dock-ship" class="text-[10px] text-slate-400 mt-1 leading-snug">Worker …</div>
+    </div>
+    <div id="preview-area" class="flex-1 flex flex-col min-h-0 p-3 overflow-hidden">
+      <div id="preview-frame" class="w-full flex-1 min-h-[160px] rounded-xl preview-empty border border-white/10 flex items-center justify-center text-slate-500 text-xs mb-3 overflow-hidden">Select a file in Vault, or open Deploy</div>
+      <div id="prev-meta" class="text-[10px] text-slate-400 w-full space-y-1 hidden shrink-0"></div>
+    </div>
+    <div class="p-3 border-t border-white/10 space-y-2 shrink-0">
+      <button type="button" onclick="switchTool('deploy')" class="w-full py-2 rounded-xl glass-light text-xs font-bold">Open deployment board</button>
+      <button id="btn-deploy" onclick="deploySelected()" disabled class="w-full py-2 rounded-xl bg-emerald-600/80 hover:bg-emerald-500 text-xs font-bold disabled:opacity-40">Publish / Deploy</button>
+      <button id="btn-route" onclick="routeSelected()" disabled class="w-full py-2 rounded-xl glass-light text-xs font-medium disabled:opacity-40">Ask Mia to Route</button>
+    </div>
+  </aside>
 </div>
 
 <!-- SETTINGS / VARIABLES & SECRETS -->
@@ -647,6 +863,8 @@ const PUBLIC_DOMAIN = 'https://heymia.lensflow.au';
 const state = {
   files: [],
   selectedId: null,
+  currentCat: 'all',
+  currentProject: '',
   geminiKey: localStorage.getItem('heymia_gemini') || '',
   githubToken: localStorage.getItem('heymia_github') || '',
   cfToken: localStorage.getItem('heymia_cf_token') || '',
@@ -682,6 +900,10 @@ const CATS = [
   { id:'legal', name:'Legal', icon:'⚖️', color:'#eab308' },
   { id:'finance', name:'Finance', icon:'💰', color:'#14b8a6' },
   { id:'unsorted', name:'Unsorted', icon:'📦', color:'#64748b' },
+  { id:'vault', name:'Vault', icon:'📁', color:'#94a3b8' },
+  { id:'project', name:'Project', icon:'📂', color:'#f472b6' },
+  { id:'ui', name:'UI', icon:'🖥️', color:'#818cf8' },
+  { id:'sites', name:'Sites', icon:'🌐', color:'#38bdf8' },
 ];
 
 /** Extensions treated as openable text/code in the vault preview */
@@ -775,20 +997,30 @@ function seedDemoVault() {
 
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', () => {
-  setupDrop();
-  seedDemoVault();
-  renderCats();
-  renderFiles();
-  initChecklist();
-  renderTraining();
-  updateGeminiStatus();
+  try { setupDrop(); } catch (e) {}
+  try { seedDemoVault(); } catch (e) {}
+  try { renderCats(); } catch (e) {}
+  try { renderFiles(); } catch (e) {}
+  try { initChecklist(); } catch (e) {}
+  try { renderTraining(); } catch (e) {}
+  try { updateGeminiStatus(); } catch (e) {}
+  try { checkYt(); } catch (e) {}
+  try { checkIg(); } catch (e) {}
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.get('yt') === 'connected') addMia('YouTube connected (' + (q.get('ch') || 'UC73le_vohvEOka1rjnOh3SQ') + '). Upload from Clips or Marketing.');
+    if (q.get('yt') === 'error') addMia('YouTube connect failed: ' + (q.get('msg') || 'unknown'));
+    if (q.get('ig') === 'connected') addMia('Instagram connected' + (q.get('user') ? ' as @' + q.get('user') : '') + '. You can Post from Clips or Marketing.');
+    if (q.get('ig') === 'error') addMia('Instagram connect failed: ' + (q.get('msg') || 'unknown'));
+  } catch (e) {}
   try { initMiaControls(); } catch (e) {}
   try { loadCloudVault(); } catch (e) {}
   try { loadLastDeploy(); } catch (e) {}
   try { maybeAutoDailyReport(); } catch (e) {}
   try { updateQuoteStatus(); renderTriggerPanel(); } catch (e) {}
-  const geminiMsg = state.geminiKey ? 'Gemini AI active.' : 'Add Gemini / Cloudflare / Stripe keys in the gear (Variables & Secrets).';
-  addMia('System ready. Domain: ' + PUBLIC_DOMAIN + '. Vault, Deploy, API, Shell, GitHub, Knowledge and Trainer are live. ' + geminiMsg);
+  try { switchTool('projects'); } catch (e) {}
+  try { loadMiaHistory(); } catch (e) {}
+  try { paintDockShip(); } catch (e) {}
 });
 
 // ========== MODE / TOOL SWITCH ==========
@@ -797,7 +1029,7 @@ function switchMode(m) {
   document.getElementById('btn-mode-work').className = m==='work' ? 'px-3 py-1.5 rounded-lg text-xs font-bold tab-active' : 'px-3 py-1.5 rounded-lg text-xs font-bold glass-light text-slate-300';
   document.getElementById('btn-mode-play').className = m==='play' ? 'px-3 py-1.5 rounded-lg text-xs font-bold tab-active' : 'px-3 py-1.5 rounded-lg text-xs font-bold glass-light text-slate-300';
   if (m === 'play') switchTool('studio');
-  else switchTool('vault');
+  else switchTool('projects');
 }
 
 function switchTool(t) {
@@ -811,13 +1043,19 @@ function switchTool(t) {
   const panel = document.getElementById('tool-' + t);
   if (panel) {
     panel.classList.remove('hidden');
-    if (t === 'vault' || t === 'editor' || t === 'studio') panel.classList.add('flex');
-    if (t === 'editor' || t === 'studio') panel.classList.add('flex-col');
+    if (t === 'vault' || t === 'editor' || t === 'studio' || t === 'cut') panel.classList.add('flex');
+    if (t === 'editor' || t === 'studio' || t === 'cut') panel.classList.add('flex-col');
   }
   if (t === 'checklist') renderChecklist();
   if (t === 'training') renderTraining();
-  if (t === 'deploy') { renderDeploy(); try { renderPublish(); } catch (e) {} }
+  if (t === 'deploy') { try { refreshDeployBoard(); } catch (e) {} }
   if (t === 'sites') { try { renderPublishedSites(); } catch (e) {} }
+  if (t === 'pentad') { try { loadPentads(); } catch (e) {} }
+  if (t === 'projects') { try { renderProducts(); } catch (e) {} }
+  if (t === 'editor') { try { renderMarketing(); } catch (e) {} }
+  if (t === 'cinema') { try { renderCinema(); } catch (e) {} }
+  if (t === 'clips') { try { refreshClips(); } catch (e) {} }
+  if (t === 'editor') { try { checkYt(); checkIg(); } catch (e) {} }
 
   document.querySelectorAll('.tool-tab').forEach(btn => {
     const base = 'tool-tab px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 ';
@@ -825,6 +1063,33 @@ function switchTool(t) {
       ? base + 'tab-active' 
       : base + 'glass-light text-slate-300';
   });
+}
+
+async function askGrokTroubleshoot(question) {
+  const box = document.getElementById('mia-chat');
+  const dropThinking = () => {
+    if (box && box.lastChild && /Asking Grok|Thinking/.test(box.lastChild.textContent || '')) box.removeChild(box.lastChild);
+  };
+  const ctx = { href: location.href, files: state.files.length, mode: state.miaMode, worker: WORKER_BASE };
+  const urls = [location.origin + '/api/grok', String(WORKER_BASE || '').replace(/\/$/, '') + '/api/grok'];
+  for (const url of urls) {
+    if (!/^https?:/i.test(url)) continue;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, message: question, context: JSON.stringify(ctx) }),
+      });
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('json')) continue;
+      const data = await res.json();
+      dropThinking();
+      const reply = data.reply || data.text || data.error;
+      if (reply) { addMia('Grok: ' + reply); return; }
+    } catch (e) {}
+  }
+  dropThinking();
+  addMia('Grok is not wired yet. Cloudflare → Worker heymia → Settings → Variables and Secrets → add XAI_API_KEY from console.x.ai then click Grok and ask again.');
 }
 
 // ========== MIA CHAT ==========
@@ -857,7 +1122,7 @@ async function sendToMia(e) {
   try { trackMiaSignal('message'); if (/\b(wrong|not jess|not mia|stop|aggressive)\b/i.test(text)) trackMiaSignal('correction'); } catch(e) {}
   input.value = '';
 
-  // Fast local commands still work instantly
+  // Local: only hard UI commands. Everything else goes to Mia so she can actually answer.
   const lower = text.toLowerCase();
   if (lower.includes('activate upgrade') || lower.startsWith('upgrade work')) {
     const f = state.files.slice().reverse().find(x => x.key && /\.html$/i.test(x.name || ''));
@@ -867,67 +1132,74 @@ async function sendToMia(e) {
   }
   if (lower.includes('ui status')) { uiStatus(); return; }
   if (lower.includes('reset ui') || lower.includes('upgrade reset')) { resetUpgrade('work'); return; }
-  if (lower.includes('live avatar') || lower.includes('start session')) {
-    addMia('Opening Fan Studio and starting LiveAvatar…');
-    switchTool('studio');
-    startLiveSession();
-    return;
+  if (lower.includes('live avatar') || lower.includes('start session')) switchTool('studio');
+  if (lower.includes('open vault') || lower.includes('show files')) switchTool('vault');
+  if (lower.includes('checklist')) switchTool('checklist');
+  if (/\btraining\b/.test(lower)) switchTool('training');
+  if (/\b(organis|organiz|sort the vault)\b/i.test(text)) switchTool('vault');
+  if (/\b(clip|reel|tiktok|capcut|make a post|make a video|make a clip)\b/i.test(text)) {
+    switchTool('editor');
+    const brief = document.getElementById('mkt-brief');
+    if (brief && !brief.value) brief.value = text;
   }
-  if (lower.includes('open vault') || lower.includes('show files')) {
-    switchTool('vault');
-    addMia('File Vault is open.');
-    return;
+  if (/\b(crop|trim|mute|ffmpeg|magic eraser|erase|cut bench|edit (the )?(video|audio|clip|image))\b/i.test(text)) {
+    switchTool('cut');
   }
-  if (lower.includes('checklist')) {
-    switchTool('checklist');
-    addMia('Checklist ready.');
-    return;
+  if (/\b(30[\s-]?min|movie|film|cinema|screenplay|shot list|featurette)\b/i.test(text)) {
+    switchTool('cinema');
+    const prem = document.getElementById('cin-premise');
+    if (prem && !prem.value) prem.value = text;
   }
-  if (lower.includes('train') || lower.includes('training')) {
-    switchTool('training');
-    addMia('Daily Training panel open. Write what you want me to remember.');
-    return;
+  if (/\b(make (a |the )?(video|clip)|render (a |the )?(video|clip)|4k clip|imagine video)\b/i.test(text)) {
+    switchTool('clips');
+    const s = document.getElementById('clip-story');
+    if (s && !s.value) s.value = text;
   }
-  if (/\b(web\s?site|landing\s?page|design (a |the )?site|build (a |the )?site|create (a |the )?site)\b/i.test(text)) {
+  if (/\b(web\s?site|landing\s?page|design (a |the )?site)\b/i.test(text)) {
     switchTool('sites');
     const brief = document.getElementById('site-brief');
-    const nameEl = document.getElementById('site-name');
     if (brief && !brief.value) brief.value = text;
-    const named = text.match(/(?:called|named|for)\s+([A-Za-z][\w\s]{1,40})/);
-    if (nameEl && named && !nameEl.value) nameEl.value = named[1].trim();
-    addMia('Sites is open. I’ll design it — generating now.');
-    designWebsite(true);
-    return;
   }
 
-  // Worker chat then Gemini
+  if (!state.miaTurns) state.miaTurns = [];
+  state.miaTurns.push({ role: 'user', content: text });
+
   addMia('Thinking…');
+  const payloads = JSON.stringify({
+    message: text,
+    messages: (state.miaTurns || [{ role: 'user', content: text }]).slice(-16),
+    agent: 'Mia',
+    mode: 'work',
+    companion: 'mia',
+  });
+  const chatUrls = [location.origin + '/api/chat'];
+  if (WORKER_BASE) chatUrls.push(WORKER_BASE.replace(/\/$/, '') + '/chat');
   try {
-    if (WORKER_BASE) {
-      const wres = await fetch(WORKER_BASE.replace(/\/$/, '') + '/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
-          messages: [{ role: 'user', content: text }],
-          agent: 'Mia',
-          mode: 'work',
-          companion: 'mia',
-        }),
-      });
-      if (wres.ok) {
+    for (const url of chatUrls) {
+      try {
+        const wres = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payloads,
+        });
+        const ct = wres.headers.get('content-type') || '';
+        if (!wres.ok || !ct.includes('json')) continue;
         const wdata = await wres.json();
         const box = document.getElementById('mia-chat');
         if (box.lastChild && box.lastChild.textContent.includes('Thinking')) box.removeChild(box.lastChild);
-        const reply = wdata.reply || wdata.response || '…';
+        const reply = wdata.reply || wdata.response;
+        if (!reply) continue;
         addMia(reply);
+        if (!state.miaTurns) state.miaTurns = [];
+        state.miaTurns.push({ role: 'assistant', content: reply });
+        persistMiaTurns();
         speakMiaText(reply);
         if (wdata.site && wdata.site.url) {
           showDeployResult({ ok: true, name: wdata.site.slug || 'site', url: wdata.site.url, at: new Date().toISOString() });
           addMia('Live URL: ' + wdata.site.url);
         }
         return;
-      }
+      } catch (e) {}
     }
   } catch (e) { /* fall through to Gemini */ }
 
@@ -1238,16 +1510,34 @@ function resetChecklist() {
 // ========== TRAINING ==========
 function renderTraining() {
   const log = document.getElementById('training-log');
-  if (!log) return;
-  if (!state.trainingNotes.length) {
-    log.innerHTML = '<div class="text-slate-500">No training notes yet. Add your first note above.</div>';
-    return;
-  }
-  log.innerHTML = state.trainingNotes.map((n, i) => `
+  if (log) {
+    log.innerHTML = state.trainingNotes.length
+      ? state.trainingNotes.map((n, i) => `
     <div class="p-3 rounded-xl bg-white/5 flex justify-between gap-2">
       <div><div class="text-[10px] text-slate-500 mb-0.5">${n.date}</div>${escapeHtml(n.text)}</div>
       <button onclick="removeTraining(${i})" class="text-slate-500 hover:text-red-400 text-xs shrink-0">✕</button>
-    </div>`).join('');
+    </div>`).join('')
+      : '<div class="text-slate-500">Personal notes land here. The 7-day camp is already in the vault.</div>';
+  }
+  loadCampBoard();
+}
+async function loadCampBoard() {
+  const board = document.getElementById('camp-board');
+  const report = document.getElementById('mem-report');
+  try {
+    const d = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/training')).json();
+    if (board && d.camp7) {
+      board.innerHTML = d.camp7.map((x) =>
+        `<div class="p-2 rounded-xl bg-white/5"><div class="font-bold text-pink-300">Day ${x.day} · ${escapeHtml(x.title)}</div><div class="text-slate-400 mt-0.5">${escapeHtml(x.pass)}</div></div>`
+      ).join('');
+    }
+  } catch (e) {
+    if (board) board.textContent = 'Camp loads after Cloudflare ships 4.2.0.';
+  }
+  try {
+    const r = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/memory?report=1')).json();
+    if (report) report.textContent = 'Memory: ' + (r.chat_turns || 0) + ' chat turns · ' + (r.memories || 0) + ' stored facts · 12-month keep. Chat history is on the Worker, not only this phone.';
+  } catch (e) {}
 }
 function saveTraining() {
   const input = document.getElementById('training-input');
@@ -1255,6 +1545,7 @@ function saveTraining() {
   if (!text) return;
   state.trainingNotes.unshift({ text, date: new Date().toLocaleString() });
   localStorage.setItem('heymia_training', JSON.stringify(state.trainingNotes));
+  try { fetch((WORKER_BASE||location.origin).replace(/\/$/, '') + '/api/memory', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key: 'train_'+Date.now(), value: text, category: 'training' }) }); } catch(e) {}
   input.value = '';
   renderTraining();
   addMia('Training note saved. I will follow it in every future reply' + (state.geminiKey ? ' (Gemini active).' : '.'));
@@ -1323,6 +1614,9 @@ async function handleFiles(list) {
         if (/\.html$/i.test(file.name) || cat === 'upgrade') {
           entry._offerUpgrade = true;
           addMia('HTML uploaded. Shell: upgrade work ' + (entry.key || '') + '  — or say “activate upgrade”.');
+        }
+        if (/\.mp4$/i.test(file.name) || (file.type || '').startsWith('video/')) {
+          addMia('Video is in the vault. Say “convert this clip to html” or open it and tap Convert MP4 to HTML page.');
         }
       } else {
         const err = await up.json().catch(() => ({}));
@@ -1395,27 +1689,192 @@ function guessCatFromCloud(name, type) {
   return 'unsorted';
 }
 
-function catName(id) { return CATS.find(c => c.id === id)?.name || id; }
+const PRODUCTS_UI = [
+  { slug:'sovereignquant', name:'Sovereign Quant', urls:[], blurb:'Multi-agent quant system' },
+  { slug:'lensflow', name:'LensFlow Dating', urls:['https://lensflow.com.au'], blurb:'Dating site · companions · Play' },
+  { slug:'missingcash', name:'Missing Cash', urls:['https://missingcash.com.au'], blurb:'Unclaimed money finder' },
+  { slug:'bartermint', name:'Bartermint', urls:['https://bartermint.polsia.app','https://bartermint.onhercules.app'], blurb:'Barter marketplace' },
+  { slug:'realestate', name:'LensFlow Real Estate', urls:[], blurb:'Pipeline + mobile' },
+];
+
+async function renderProducts() {
+  const grid = document.getElementById('product-grid');
+  if (!grid) return;
+  let remote = PRODUCTS_UI;
+  try {
+    const res = await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/products');
+    const data = await res.json();
+    if (data.products && data.products.length) remote = data.products;
+  } catch (e) {}
+  grid.innerHTML = remote.map((p) => {
+    const n = p.files != null ? p.files : state.files.filter((f) => fileProject(f) === p.slug).length;
+    const links = (p.urls || []).map((u) => `<a class="text-pink-300 underline" href="${u}" target="_blank" rel="noopener">${u.replace(/^https?:\/\//,'')}</a>`).join('<br>');
+    const social = ['facebook','instagram','tiktok','x'].map((id) => `<span class="text-[9px] uppercase tracking-wide text-slate-500">${id}</span>`).join(' · ');
+    return `<button onclick="openProduct('${p.slug}')" class="text-left glass rounded-2xl p-4 border border-white/10 hover:border-pink-500/40">
+      <div class="text-sm font-bold">${p.name}</div>
+      <div class="text-[11px] text-slate-400 mt-1">${p.blurb || ''}</div>
+      <div class="text-[10px] text-pink-300 mt-2">${n} file${n===1?'':'s'}</div>
+      <div class="text-[10px] mt-2 leading-relaxed">${links || 'No live URL yet'}</div>
+      <div class="mt-2">${social}</div>
+    </button>`;
+  }).join('');
+}
+
+function openProduct(slug) {
+  const p = PRODUCTS_UI.find((x) => x.slug === slug) || { slug, name: slug };
+  const files = state.files.filter((f) => fileProject(f) === slug);
+  const box = document.getElementById('product-files');
+  box.classList.remove('hidden');
+  box.innerHTML = `<div class="glass rounded-2xl p-4 border border-white/10">
+    <div class="flex justify-between items-center mb-2">
+      <div class="font-bold text-sm">${p.name}</div>
+      <button class="text-[10px] text-slate-400" onclick="document.getElementById('product-files').classList.add('hidden')">Close</button>
+    </div>
+    ${files.length ? files.map((f) => `<button onclick="switchTool('vault');setProject('${slug}');selectFile('${f.id}')" class="block w-full text-left text-xs py-2 border-b border-white/5">${escapeHtml(f.name)}</button>`).join('') : '<div class="text-xs text-slate-400">No files yet. Drop uploads and say “file this into ' + p.name + '”.</div>'}
+  </div>`;
+}
+
+async function mintPentadNow() {
+  const name = (document.getElementById('pentad-name').value || 'Pentad').trim();
+  const claim = (document.getElementById('pentad-claim').value || '').trim();
+  const quote = (document.getElementById('pentad-quote').value || '').trim();
+  const st = document.getElementById('pentad-status');
+  st.textContent = 'Minting…';
+  try {
+    const res = await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/pentad', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, claim, quote }),
+    });
+    const d = await res.json();
+    st.innerHTML = d.ok ? ('Live: <a class="text-pink-300 underline" href="' + (d.url || '/5d/') + '" target="_blank">' + (d.url || '') + '</a>') : (d.error || 'fail');
+    addMia(d.ok ? ('Pentad minted. Five axes. Citation field is in. ' + (d.url || '')) : 'Mint failed');
+    loadPentads();
+  } catch (e) {
+    st.textContent = String(e.message || e);
+  }
+}
+function fillPentad(name, claim, quote) {
+  document.getElementById('pentad-name').value = name;
+  document.getElementById('pentad-claim').value = claim;
+  document.getElementById('pentad-quote').value = quote;
+}
+async function seedPentadsNow() {
+  const st = document.getElementById('pentad-status');
+  if (st) st.textContent = 'Minting Ash and Altar, Missing Cash, HeyMia…';
+  try {
+    const d = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/pentad', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'seed' })
+    })).json();
+    if (st) st.textContent = d.ok ? ('Minted ' + (d.minted || []).length + ' samples') : (d.error || 'fail');
+    loadPentads();
+  } catch (e) {
+    if (st) st.textContent = e.message;
+  }
+}
+async function loadPentads() {
+  try {
+    const d = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/pentad')).json();
+    const box = document.getElementById('pentad-samples');
+    if (box && d.samples) {
+      box.innerHTML = d.samples.map((s) =>
+        `<button type="button" onclick='fillPentad(${JSON.stringify(s.name)},${JSON.stringify(s.claim)},${JSON.stringify(s.quote)})' class="text-left glass rounded-xl p-3 border border-white/10">
+          <div class="text-xs font-bold">${escapeHtml(s.name)}</div>
+          <div class="text-[10px] text-slate-500 mt-1 line-clamp-3">${escapeHtml(s.claim)}</div>
+        </button>`
+      ).join('');
+    }
+    const live = document.getElementById('pentad-live');
+    if (live) {
+      live.innerHTML = (d.items || []).map((i) =>
+        `<a class="block text-pink-300 underline" href="${i.url}" target="_blank">/5d/${escapeHtml(i.slug)}/</a>`
+      ).join('') || 'No live Pentads yet — mint a sample.';
+    }
+  } catch (e) {}
+}
+
+async function seedProductsNow() {
+  addMia('Seeding the 5 project boards and filing files…');
+  try {
+    const res = await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/products', { method: 'POST' });
+    const rec = await res.json();
+    if (!rec.ok) throw new Error(rec.error || 'seed failed');
+    addMia('Projects ready: Sovereign Quant, LensFlow Dating, Missing Cash, Bartermint, Real Estate.');
+    state.files = state.files.filter((f) => !f.key);
+    await loadCloudVault();
+    renderProducts();
+  } catch (e) {
+    addMia('Seed failed: ' + (e.message || e) + '. Need Worker v3.4.');
+  }
+}
+function fileProject(f) {
+  const k = f.key || '';
+  const m = k.match(/^projects\/([^/]+)/);
+  const raw = m ? m[1] : (f.project || '');
+  const alias = { 'sovereign-quant':'sovereignquant', 'agent-core':'sovereignquant', 'liveavatar':'lensflow', 'heymia-play':'lensflow', inbox:'heymia', convex:'heymia', 'heymia-work':'heymia' };
+  return alias[raw] || raw || 'heymia';
+}
 
 function renderCats() {
   const list = document.getElementById('cat-list');
-  list.innerHTML = `<button onclick="setCat('all')" class="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-white/5 ${state.currentCat==='all'?'bg-pink-500/15 text-pink-300':''}">📁 All (${state.files.length})</button>` +
+  const plist = document.getElementById('project-list');
+  const projects = {};
+  state.files.forEach((f) => {
+    const p = fileProject(f);
+    projects[p] = (projects[p] || 0) + 1;
+  });
+  if (plist) {
+    const names = Object.keys(projects).sort();
+    plist.innerHTML = names.map((p) => {
+      const on = state.currentProject === p;
+      return `<button onclick="setProject('${p}')" class="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-white/5 ${on?'bg-pink-500/15 text-pink-300':''}">📂 ${p} <span class="opacity-50">${projects[p]}</span></button>`;
+    }).join('') || '<div class="text-[10px] text-slate-500 px-2">No project folders yet.</div>';
+  }
+  list.innerHTML = `<button onclick="setCat('all')" class="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-white/5 ${state.currentCat==='all'&&!state.currentProject?'bg-pink-500/15 text-pink-300':''}">📁 All (${state.files.length})</button>` +
     CATS.map(c => {
       const cnt = state.files.filter(f => f.category === c.id).length;
       return `<button onclick="setCat('${c.id}')" class="w-full text-left px-2 py-1.5 rounded-lg text-xs hover:bg-white/5 ${state.currentCat===c.id?'bg-pink-500/15 text-pink-300':''}">${c.icon} ${c.name} <span class="opacity-50">${cnt}</span></button>`;
     }).join('');
 }
 
+function setProject(id) {
+  state.currentProject = id;
+  state.currentCat = 'all';
+  document.getElementById('cat-label').textContent = 'Project · ' + id;
+  renderCats();
+  renderFiles();
+}
+
 function setCat(id) {
   state.currentCat = id;
+  state.currentProject = '';
   document.getElementById('cat-label').textContent = id === 'all' ? 'All Files' : catName(id);
   renderCats();
   renderFiles();
 }
 
+async function organizeVaultNow() {
+  addMia('Filing vault into project folders…');
+  showDeployPending('organize_vault');
+  try {
+    const res = await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/organize', { method: 'POST' });
+    const rec = await res.json();
+    if (!rec.ok) throw new Error(rec.error || 'organize failed');
+    const lines = Object.entries(rec.projects || {}).map(([k, n]) => k + ': ' + n).join(', ');
+    addMia('Filed ' + rec.moved + ' file(s). ' + lines + '. Live UI left in ui/.');
+    showDeployResult({ ok: true, name: 'organize_vault', url: '', at: new Date().toISOString() });
+    state.files = state.files.filter((f) => !f.key);
+    await loadCloudVault();
+  } catch (e) {
+    addMia('Organize failed: ' + (e.message || e) + '. Deploy Worker v3.3 then try again.');
+    showDeployResult({ ok: false, name: 'organize_vault', error: String(e.message || e), at: new Date().toISOString() });
+  }
+}
+
 function renderFiles() {
   let files = state.files;
-  if (state.currentCat !== 'all') files = files.filter(f => f.category === state.currentCat);
+  if (state.currentProject) files = files.filter(f => fileProject(f) === state.currentProject);
+  else if (state.currentCat !== 'all') files = files.filter(f => f.category === state.currentCat);
   const grid = document.getElementById('file-grid');
   if (!files.length) {
     grid.innerHTML = '<div class="col-span-full text-center text-slate-500 text-xs py-16">No files yet. Drop mixed files on the left — JS, Python, Node, media, docs.</div>';
@@ -1455,11 +1914,12 @@ async function selectFile(id) {
   const frame = document.getElementById('preview-frame') || area.querySelector('div') || area;
   const t = f.type || '';
   if (t.startsWith('image/')) {
-    frame.innerHTML = `<img src="${f.url}" class="w-full h-full object-contain rounded-xl">`;
-  } else if (t.startsWith('video/')) {
-    frame.innerHTML = `<video src="${f.url}" class="w-full h-full object-contain" controls></video>`;
+    frame.innerHTML = `<div class="w-full h-full flex flex-col gap-2"><img src="${f.url}" class="w-full flex-1 object-contain rounded-xl"><button type="button" onclick="openCut('${(f.key||'').replace(/'/g,'')}', '${String(f.name).replace(/'/g,'')}')" class="px-3 py-2 rounded-xl bg-white text-black text-[11px] font-bold">Magic eraser / crop</button></div>`;
+  } else if (t.startsWith('video/') || /\.mp4$/i.test(f.name)) {
+    const k = f.key || '';
+    frame.innerHTML = `<div class="w-full h-full flex flex-col gap-2"><video src="${f.url}" class="w-full flex-1 object-contain" controls></video><div class="flex gap-2"><button type="button" onclick="openCut('${k.replace(/'/g,'')}', '${String(f.name).replace(/'/g,'')}')" class="flex-1 px-3 py-2 rounded-xl bg-white text-black text-[11px] font-bold">Edit in Cut</button><button type="button" onclick="convertMp4Now('${k.replace(/'/g,'')}', '${String(f.name).replace(/'/g,'')}')" class="flex-1 px-3 py-2 rounded-xl bg-pink-600 text-[11px] font-bold">MP4 to HTML</button></div></div>`;
   } else if (t.startsWith('audio/')) {
-    frame.innerHTML = `<div class="w-full text-center space-y-3"><div class="text-4xl">🎵</div><audio src="${f.url}" class="w-full" controls></audio><div class="text-[10px] text-slate-400">${escapeHtml(f.name)}</div></div>`;
+    frame.innerHTML = `<div class="w-full text-center space-y-3"><audio src="${f.url}" class="w-full" controls></audio><div class="text-[10px] text-slate-400">${escapeHtml(f.name)}</div><button type="button" onclick="openCut('${(f.key||'').replace(/'/g,'')}', '${String(f.name).replace(/'/g,'')}')" class="px-3 py-2 rounded-xl bg-white text-black text-[11px] font-bold">Edit audio in Cut</button></div>`;
   } else if (isCodeFile(f) || /.html?$/i.test(f.name)) {
     frame.innerHTML = `<div class="w-full h-full flex flex-col min-h-[200px]"><div class="flex items-center justify-between mb-2 shrink-0"><span class="text-[10px] font-bold text-indigo-300">${codeIcon(f.name)} ${lang || 'Text'}</span><div class="flex gap-1"><button type="button" onclick="copyPreviewText()" class="px-2 py-0.5 rounded bg-white/10 text-[9px] font-bold">Copy</button><a href="${f.url}" download="${escapeHtml(f.name)}" class="px-2 py-0.5 rounded bg-white/10 text-[9px] font-bold no-underline text-white">Download</a></div></div><pre id="code-preview" class="flex-1 overflow-auto bg-black/50 border border-white/10 rounded-xl p-3 text-[11px] font-mono text-emerald-200/90 whitespace-pre-wrap break-words max-h-[55vh]">Loading…</pre></div>`;
     try {
@@ -1543,9 +2003,9 @@ function renderDeploy() {
   }).join('');
 }
 
-function showDeployResult(rec) {
+function showDeployResult(rec, opts) {
   if (!rec) return;
-  const ok = !!rec.ok;
+  const ok = rec.ok !== false && !rec.error;
   const when = rec.at ? fmtWhen(rec.at) : new Date().toLocaleString();
   const title = ok ? 'DEPLOY SUCCESS' : 'DEPLOY FAILED';
   const detail = ok
@@ -1567,7 +2027,9 @@ function showDeployResult(rec) {
       : 'border-rose-500/40 bg-rose-500/10 text-rose-300');
     panel.innerHTML = '<div class="text-[11px] tracking-widest uppercase mb-1">' + title + '</div><div class="font-medium text-white/90">' + detail + '</div>';
   }
-  try { addMia(ok ? ('Deploy succeeded: ' + (rec.url || rec.name || 'live')) : ('Deploy failed: ' + (rec.error || 'unknown'))); } catch (e) {}
+  if (!opts || !opts.silent) {
+    try { addMia(ok ? ('Deploy succeeded: ' + (rec.url || rec.name || 'live')) : ('Deploy failed: ' + (rec.error || 'unknown'))); } catch (e) {}
+  }
 }
 
 function showDeployPending(name) {
@@ -1591,12 +2053,23 @@ async function logDeploy(rec) {
 
 async function loadLastDeploy() {
   try {
-    const raw = localStorage.getItem('heymia_last_deploy');
-    if (raw) showDeployResult(JSON.parse(raw));
+    const st = await (await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/status')).json();
+    const last = st.last_deploy || {};
+    const rec = {
+      ok: st.ok !== false && last.ok !== false,
+      name: 'heymia ' + (st.version || '') + (last.name ? ' · ' + last.name : ''),
+      action: last.action || 'git',
+      url: last.url || (st.domain || location.origin) + '/work',
+      at: last.at || new Date().toISOString(),
+      error: last.ok === false ? (last.error || '') : '',
+    };
+    showDeployResult(rec, { silent: true });
+    try { localStorage.setItem('heymia_last_deploy', JSON.stringify(rec)); } catch (e) {}
+    return;
   } catch (e) {}
   try {
-    const data = await (await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/deploy')).json();
-    if (data && data.last) showDeployResult(data.last);
+    const raw = localStorage.getItem('heymia_last_deploy');
+    if (raw) showDeployResult(JSON.parse(raw), { silent: true });
   } catch (e) {}
 }
 
@@ -1735,35 +2208,121 @@ async function renderPublishedSites() {
 }
 
 // ========== GLOBAL SEARCH ==========
+function catName(cat) {
+  const mapping = {
+    code: 'Code',
+    image: 'Image',
+    video: 'Video',
+    audio: 'Audio',
+    text: 'Text',
+    project: 'Project',
+    folder: 'Folder',
+    misc: 'Misc'
+  };
+  if (mapping[cat]) return mapping[cat];
+  if (!cat || cat === 'all') return 'All Files';
+  const c = (typeof CATS !== 'undefined' ? CATS : []).find((x) => x.id === cat);
+  if (c) return c.name;
+  return String(cat).replace(/[-_]/g, ' ');
+}
+
 function runGlobalSearch(q) {
   const box = document.getElementById('search-results');
-  if (!q.trim()) { box.classList.add('hidden'); return; }
-  const lower = q.toLowerCase();
+  if (!box) return;
+  const query = String(q || '').trim();
+  if (!query) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+  const lower = query.toLowerCase();
   const hits = [];
-  state.files.forEach(f => {
-    if (f.name.toLowerCase().includes(lower) || f.category.includes(lower) || (f.routedTo||'').includes(lower))
-      hits.push({ type:'file', label:f.name, sub:catName(f.category), id:f.id });
+  const seen = new Set();
+  const push = (h) => {
+    const k = (h.type || '') + ':' + (h.id || h.label);
+    if (seen.has(k)) return;
+    seen.add(k);
+    hits.push(h);
+  };
+  (state.files || []).forEach((f) => {
+    const cat = String(f.category || '');
+    const name = String(f.name || '');
+    const key = String(f.key || '');
+    const proj = String(f.project || '');
+    const blob = (name + ' ' + cat + ' ' + key + ' ' + proj + ' ' + (f.routedTo || '')).toLowerCase();
+    if (blob.includes(lower)) {
+      push({ type: 'file', label: name, sub: catName(cat) + (key ? ' · ' + key : ''), id: f.id });
+    }
   });
-  state.contentStore.forEach(c => {
-    if (c.name.toLowerCase().includes(lower) || c.content.toLowerCase().includes(lower))
-      hits.push({ type:'content', label:c.name, sub:c.content.slice(0,60)+'…' });
+  (state.contentStore || []).forEach((c) => {
+    const name = String(c.name || '');
+    const content = String(c.content || '');
+    if (name.toLowerCase().includes(lower) || content.toLowerCase().includes(lower)) {
+      push({ type: 'content', label: name, sub: content.slice(0, 60) + (content.length > 60 ? '…' : ''), id: c.id || '' });
+    }
+  });
+  (typeof PRODUCTS_UI !== 'undefined' ? PRODUCTS_UI : []).forEach((p) => {
+    const blob = [p.name, p.slug, p.blurb, (p.urls || []).join(' ')].join(' ').toLowerCase();
+    if (blob.includes(lower)) {
+      push({ type: 'project', label: p.name, sub: 'Project · ' + (p.slug || ''), id: p.slug });
+    }
+  });
+  (typeof CATS !== 'undefined' ? CATS : []).forEach((c) => {
+    if (c.name.toLowerCase().includes(lower) || c.id.toLowerCase().includes(lower)) {
+      push({ type: 'folder', label: c.name, sub: catName('folder'), id: c.id });
+    }
+  });
+  [
+    { id: 'clips', name: 'Clips', sub: 'Store and download videos' },
+    { id: 'cinema', name: 'Cinema', sub: '30-min movie bible' },
+    { id: 'cut', name: 'Cut bench', sub: 'Trim, crop, magic eraser' },
+    { id: 'editor', name: 'Marketing', sub: 'Clips, posts, social' },
+    { id: 'deploy', name: 'Deploy', sub: 'Publish live' },
+    { id: 'sites', name: 'Sites', sub: 'Design and publish' },
+    { id: 'vault', name: 'File Vault', sub: 'All files' },
+    { id: 'pentad', name: '5D Pentad', sub: 'Citation frames' },
+  ].forEach((t) => {
+    if ((t.name + ' ' + t.sub + ' ' + t.id).toLowerCase().includes(lower)) {
+      push({ type: 'tool', label: t.name, sub: t.sub, id: t.id });
+    }
   });
   if (!hits.length) {
-    box.innerHTML = '<div class="p-3 text-xs text-slate-500">No matches</div>';
+    box.innerHTML = '<div class="p-3 text-xs text-slate-500">No matches for “' + escapeHtml(query) + '”</div>';
   } else {
-    box.innerHTML = hits.slice(0,12).map(h => `
-      <div class="px-3 py-2 hover:bg-white/5 cursor-pointer text-xs border-b border-white/5 last:border-0" onclick="searchGo('${h.type}','${h.id||''}')">
-        <div class="font-medium">${h.label}</div>
-        <div class="text-[10px] text-slate-500">${h.sub}</div>
+    box.innerHTML = hits.slice(0, 12).map((h, i) => `
+      <div class="px-3 py-2 hover:bg-white/5 cursor-pointer text-xs border-b border-white/5 last:border-0 ${i===0?'bg-white/5':''}" onclick="searchGo('${h.type}','${String(h.id||'').replace(/'/g, '')}')">
+        <div class="font-medium">${escapeHtml(h.label)}</div>
+        <div class="text-[10px] text-slate-500">${escapeHtml(h.sub || '')}</div>
       </div>`).join('');
   }
+  box.dataset.first = hits[0] ? (hits[0].type + '|' + (hits[0].id || '')) : '';
   box.classList.remove('hidden');
 }
 
-function searchGo(type, id) {
-  document.getElementById('search-results').classList.add('hidden');
-  if (type === 'file' && id) { switchTool('vault'); selectFile(id); }
+function globalSearchKey(e) {
+  const box = document.getElementById('search-results');
+  if (e.key === 'Escape') {
+    if (box) { box.classList.add('hidden'); box.innerHTML = ''; }
+    e.target.blur();
+    return;
+  }
+  if (e.key === 'Enter' && box && box.dataset.first) {
+    const [type, id] = box.dataset.first.split('|');
+    searchGo(type, id);
+  }
 }
+
+function searchGo(type, id) {
+  const box = document.getElementById('search-results');
+  if (box) box.classList.add('hidden');
+  if (type === 'file' && id) { switchTool('vault'); selectFile(id); return; }
+  if (type === 'project' && id) { switchTool('projects'); try { openProduct(id); } catch (e) {} return; }
+  if (type === 'folder' && id) { switchTool('vault'); setCat(id); return; }
+  if (type === 'tool' && id) { switchTool(id); return; }
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = e.target && e.target.closest && e.target.closest('#global-search, #search-results');
+  if (wrap) return;
+  const box = document.getElementById('search-results');
+  if (box) box.classList.add('hidden');
+});
 
 // ========== FIND & REPLACE ==========
 function doFindReplace(execute) {
@@ -1784,6 +2343,599 @@ function doFindReplace(execute) {
   });
   log.innerHTML += `<div class="mt-2 font-bold text-emerald-400">${execute ? 'Replaced' : 'Found'} ${total} occurrence(s)</div>`;
   if (execute) addMia(`Find & Replace completed — ${total} replacements across content store.`);
+}
+
+// ========== MARKETING STUDIO ==========
+const MKT_CAPCUT = [
+  { name:'CapCut editor', url:'https://www.capcut.com/editor', use:'Timeline · trim · text · 1080p' },
+  { name:'Templates', url:'https://www.capcut.com/explore', use:'Free trending templates' },
+  { name:'Auto captions', url:'https://www.capcut.com/tools/auto-captions', use:'Burn captions' },
+  { name:'Text to speech', url:'https://www.capcut.com/tools/text-to-speech', use:'Voice from script' },
+  { name:'Background remover', url:'https://www.capcut.com/tools/background-remover', use:'Cut-out' },
+  { name:'Auto cut', url:'https://www.capcut.com/tools/auto-cut', use:'Jump cuts' },
+  { name:'AI writer', url:'https://www.capcut.com/tools/ai-writer', use:'Hooks / CTAs' },
+  { name:'Text to video', url:'https://www.capcut.com/tools/text-to-video', use:'Script → clip' },
+  { name:'Image to video', url:'https://www.capcut.com/tools/image-to-video', use:'Still → motion' },
+  { name:'Script to video', url:'https://www.capcut.com/tools/script-to-video', use:'Shot assembly' },
+  { name:'Noise reduction', url:'https://www.capcut.com/tools/noise-reduction', use:'Clean audio' },
+  { name:'Video enhancer', url:'https://www.capcut.com/tools/video-enhancer', use:'Sharpen 1080p' },
+];
+const MKT_KINDS = [
+  { id:'clips', name:'Clips' }, { id:'videos', name:'Videos' }, { id:'posts', name:'Posts' },
+  { id:'stories', name:'Stories' }, { id:'ads', name:'Ads' }, { id:'scripts', name:'Scripts' }, { id:'captions', name:'Captions' },
+  { id:'emails', name:'Emails' }, { id:'social', name:'Social' },
+];
+const MKT_SOCIAL = [
+  { id:'facebook', name:'Facebook' }, { id:'instagram', name:'Instagram' }, { id:'tiktok', name:'TikTok' },
+  { id:'x', name:'X' }, { id:'linkedin', name:'LinkedIn' }, { id:'youtube', name:'YouTube' },
+];
+state.mktProject = 'lensflow';
+state.mktKind = 'clips';
+
+function renderMarketing() {
+  const pbox = document.getElementById('mkt-projects');
+  const kbox = document.getElementById('mkt-kinds');
+  const cbox = document.getElementById('mkt-capcut');
+  if (pbox) pbox.innerHTML = PRODUCTS_UI.map((p) => `<button onclick="state.mktProject='${p.slug}';renderMarketing();mktList()" class="px-2 py-1 rounded-lg text-[10px] font-bold ${state.mktProject===p.slug?'tab-active':'glass-light'}">${p.name}</button>`).join('');
+  if (kbox) kbox.innerHTML = MKT_KINDS.map((k) => `<button onclick="state.mktKind='${k.id}';renderMarketing();mktList()" class="px-2 py-1 rounded-md text-[10px] ${state.mktKind===k.id?'bg-pink-600/80':'glass-light'}">${k.name}</button>`).join('');
+  if (cbox) cbox.innerHTML = MKT_CAPCUT.map((t) => `<a class="glass-light rounded-xl p-2 block hover:border-pink-500/40 border border-transparent" href="${t.url}" target="_blank" rel="noopener"><div class="text-[11px] font-bold">${t.name}</div><div class="text-[10px] text-slate-500">${t.use}</div></a>`).join('');
+  const sbox = document.getElementById('mkt-social-fields');
+  if (sbox) sbox.innerHTML = MKT_SOCIAL.map((s) => `<input id="soc-${s.id}" class="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[11px]" placeholder="${s.name} URL">`).join('');
+  mktList();
+  mktLoadSocial();
+}
+
+async function seedMarketingNow() {
+  const st = document.getElementById('mkt-status');
+  if (st) st.textContent = 'Creating marketing folders…';
+  try {
+    await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/marketing', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'seed' }) });
+    if (st) st.textContent = 'Folders ready: clips, videos, posts, stories, ads, scripts, captions × 5 products.';
+    addMia('Marketing folders created under each project.');
+    mktList();
+  } catch (e) {
+    if (st) st.textContent = 'Need Worker v3.5 — ' + (e.message || e);
+  }
+}
+
+async function mktLoadSocial() {
+  try {
+    const res = await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/marketing?project=' + encodeURIComponent(state.mktProject));
+    const d = await res.json();
+    const links = d.links || {};
+    MKT_SOCIAL.forEach((s) => {
+      const el = document.getElementById('soc-' + s.id);
+      if (el) el.value = links[s.id] || '';
+    });
+    mktRenderShare(links);
+  } catch (e) {}
+}
+
+function mktRenderShare(links) {
+  const box = document.getElementById('mkt-share');
+  if (!box) return;
+  links = links || {};
+  const p = PRODUCTS_UI.find((x) => x.slug === state.mktProject) || {};
+  const page = (p.urls && p.urls[0]) || 'https://heymia.lensflow.au/work';
+  const text = (document.getElementById('mkt-script') && document.getElementById('mkt-script').value.slice(0, 180)) || p.name || '';
+  const share = {
+    facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(page),
+    x: 'https://twitter.com/intent/tweet?url=' + encodeURIComponent(page) + '&text=' + encodeURIComponent(text),
+    linkedin: 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(page),
+    instagram: links.instagram || 'https://www.instagram.com/',
+    tiktok: links.tiktok || 'https://www.tiktok.com/upload?lang=en',
+    youtube: links.youtube || 'https://studio.youtube.com/',
+  };
+  box.innerHTML = MKT_SOCIAL.map((s) => {
+    const href = links[s.id] || share[s.id];
+    return `<a class="px-2 py-1 rounded-lg glass-light text-[10px] font-bold" href="${href}" target="_blank" rel="noopener">${s.name}</a>`;
+  }).join('');
+}
+
+async function mktSaveSocial() {
+  const links = {};
+  MKT_SOCIAL.forEach((s) => {
+    const el = document.getElementById('soc-' + s.id);
+    if (el && el.value.trim()) links[s.id] = el.value.trim();
+  });
+  const res = await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/marketing', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'social', project: state.mktProject, links }) });
+  const d = await res.json();
+  document.getElementById('mkt-status').textContent = d.ok ? 'Social links saved on the website' : (d.error || 'fail');
+  addMia(d.ok ? 'Social links saved for ' + state.mktProject : 'Social save failed');
+  mktRenderShare(links);
+}
+
+async function mktWriteEmail() {
+  const brief = ((document.getElementById('mkt-brief') && document.getElementById('mkt-brief').value) || document.getElementById('mkt-email-subject').value || 'promo').trim();
+  const prompt = 'Write a marketing EMAIL for ' + state.mktProject + '. Brief: ' + brief + '. Format exactly:\nSUBJECT:\nBODY:\nCTA:';
+  document.getElementById('mkt-status').textContent = 'Writing email…';
+  try {
+    const res = await fetch(WORKER_BASE.replace(/\/$/, '') + '/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message: prompt, messages:[{role:'user', content: prompt}], agent:'Mia' }) });
+    const d = await res.json();
+    const t = d.reply || d.response || '';
+    const sub = (t.match(/SUBJECT:\s*(.+)/i) || [])[1] || brief;
+    document.getElementById('mkt-email-subject').value = sub.trim();
+    document.getElementById('mkt-email-body').value = t.replace(/^SUBJECT:.*\n/i, '').trim();
+    document.getElementById('mkt-status').textContent = 'Email draft ready.';
+  } catch (e) {
+    document.getElementById('mkt-status').textContent = String(e.message || e);
+  }
+}
+
+async function mktSaveEmail() {
+  const subject = document.getElementById('mkt-email-subject').value || 'Campaign';
+  const body = document.getElementById('mkt-email-body').value || '';
+  const to = document.getElementById('mkt-email-to').value || '';
+  const content = 'To: ' + to + '\nSubject: ' + subject + '\n\n' + body;
+  const name = 'email-' + Date.now() + '.txt';
+  const res = await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/marketing', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ project: state.mktProject, kind: 'emails', name, content, type: 'text/plain;charset=UTF-8' }) });
+  const d = await res.json();
+  document.getElementById('mkt-status').textContent = d.ok ? 'Saved ' + d.key : (d.error || 'fail');
+  addMia(d.ok ? 'Email campaign filed in ' + d.key : 'Email save failed');
+  mktList();
+}
+
+function mktMailTo() {
+  const to = document.getElementById('mkt-email-to').value || '';
+  const subject = document.getElementById('mkt-email-subject').value || '';
+  const body = document.getElementById('mkt-email-body').value || '';
+  location.href = 'mailto:' + encodeURIComponent(to) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+}
+
+const CINEMA_ENGINES = [
+  { name:'Kling', url:'https://klingai.com', use:'8s motion, character lock' },
+  { name:'Runway', url:'https://runwayml.com', use:'camera moves' },
+  { name:'Luma', url:'https://lumalabs.ai/dream-machine', use:'magic physics' },
+  { name:'Hailuo', url:'https://hailuoai.video', use:'volume B-roll' },
+  { name:'Pika', url:'https://pika.art', use:'stylised inserts' },
+  { name:'CapCut', url:'https://www.capcut.com', use:'captions + stitch' },
+  { name:'ElevenLabs', url:'https://elevenlabs.io/app/speech-synthesis', use:'dialogue' },
+  { name:'Suno', url:'https://suno.com', use:'score' },
+];
+
+function renderCinema() {
+  const box = document.getElementById('cin-engines');
+  if (box) {
+    box.innerHTML = CINEMA_ENGINES.map((e) =>
+      `<a class="px-2 py-1 rounded-lg glass-light text-[10px] font-bold" href="${e.url}" target="_blank" rel="noopener">${escapeHtml(e.name)} · ${escapeHtml(e.use)}</a>`
+    ).join('');
+  }
+  listCinemaNow();
+}
+
+async function createCinemaNow() {
+  const payload = {
+    title: (document.getElementById('cin-title').value || '').trim() || 'The Door That Shouldn\'t',
+    premise: (document.getElementById('cin-premise').value || '').trim(),
+    genre: (document.getElementById('cin-genre').value || '').trim() || 'magical realism',
+    runtime: Number(document.getElementById('cin-runtime').value) || 30,
+    hero: (document.getElementById('cin-hero').value || '').trim() || 'the seeker',
+    vibe: (document.getElementById('cin-vibe').value || '').trim(),
+  };
+  const st = document.getElementById('cin-status');
+  if (st) st.textContent = 'Writing bible…';
+  try {
+    const rec = await (await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/cinema', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    })).json();
+    if (st) st.textContent = rec.ok ? ('Saved movies/' + rec.slug + '/ · ' + (rec.scenes || []).length + ' scenes · ' + rec.runtime_min + ' min') : (rec.error || 'fail');
+    paintCinema(rec);
+    addMia(rec.ok
+      ? ('Movie bible ready: “' + rec.title + '”. ' + (rec.scenes || []).length + ' scenes, 108 locked shots. Generate in Kling with the lock prompt, then stitch in Cut. I did not render 30 minutes of pixels — that is the part the engines do.')
+      : ('Cinema failed: ' + (rec.error || 'unknown')));
+    listCinemaNow();
+  } catch (e) {
+    if (st) st.textContent = e.message;
+    addMia('Cinema request failed: ' + e.message);
+  }
+}
+
+function paintCinema(m) {
+  const board = document.getElementById('cin-board');
+  if (!board || !m || !m.scenes) return;
+  const yt = (m.viral && m.viral.youtube) || {};
+  board.innerHTML =
+    `<div class="glass rounded-2xl p-4 border border-white/10 space-y-2">
+      <div class="text-sm font-bold">${escapeHtml(m.title)}</div>
+      <div class="text-[11px] text-slate-400">${escapeHtml(m.logline || '')}</div>
+      <div class="text-[11px] text-pink-300">${escapeHtml(m.hook_3s || '')}</div>
+      <div class="text-[10px] text-slate-500">YouTube: ${escapeHtml(yt.title || '')}</div>
+      <pre class="text-[10px] bg-black/40 rounded-xl p-3 overflow-x-auto whitespace-pre-wrap">${escapeHtml(m.lock || '')}</pre>
+    </div>` +
+    m.scenes.map((s) => {
+      const start = Math.floor(s.start / 60) + ':' + String(s.start % 60).padStart(2, '0');
+      return `<div class="glass rounded-2xl p-4 border border-white/10">
+        <div class="flex justify-between gap-2 text-xs font-bold"><span>${escapeHtml(s.id)} · ${escapeHtml(s.fn)}</span><span class="text-slate-500">${start} · ${s.duration}s</span></div>
+        <div class="text-[11px] text-slate-400 mt-1">${escapeHtml(s.purpose || '')}</div>
+        ${s.dialogue ? '<div class="text-[12px] mt-2 italic">' + escapeHtml(s.dialogue) + '</div>' : ''}
+        <div class="mt-2 space-y-1">${(s.shots || []).map((sh) =>
+          '<div class="text-[10px] text-slate-400"><span class="text-pink-300 font-bold">' + escapeHtml(sh.id) + '</span> ' + escapeHtml(sh.prompt) + '</div>'
+        ).join('')}</div>
+      </div>`;
+    }).join('');
+}
+
+async function listCinemaNow() {
+  const box = document.getElementById('cin-saved');
+  if (!box) return;
+  try {
+    const d = await (await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/cinema')).json();
+    const movies = d.movies || [];
+    box.innerHTML = movies.length
+      ? movies.map((m) => `<button class="block text-left w-full truncate hover:text-pink-300" onclick="openCinema('${m.slug}')">${escapeHtml(m.title)} · ${m.runtime_min}m · ${m.scenes} scenes</button>`).join('')
+      : 'No films yet — write one.';
+  } catch (e) {
+    box.textContent = 'Could not list films.';
+  }
+}
+
+async function openCinema(slug) {
+  try {
+    const m = await (await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/cinema?slug=' + encodeURIComponent(slug))).json();
+    paintCinema(m);
+    addMia('Opened “' + (m.title || slug) + '”.');
+  } catch (e) {
+    addMia('Could not open film: ' + e.message);
+  }
+}
+
+function clipUrl(c, download) {
+  const base = (WORKER_BASE || location.origin).replace(/\/$/, '');
+  return base + '/files?key=' + encodeURIComponent(c.key) + (download ? '&download=1' : '');
+}
+async function refreshClips() {
+  const grid = document.getElementById('clips-grid');
+  const st = document.getElementById('clips-status');
+  if (st) st.textContent = 'Loading clips/ …';
+  try {
+    const d = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/clips')).json();
+    const clips = d.clips || [];
+    if (st) st.textContent = clips.length ? (clips.length + ' in clips/') : 'Folder is ready — drop the first MP4.';
+    if (!grid) return;
+    grid.innerHTML = clips.length ? clips.map((c) => {
+      const play = clipUrl(c, false);
+      const dl = clipUrl(c, true);
+      const media = c.video
+        ? `<video src="${play}" class="w-full h-36 object-cover bg-black" controls preload="metadata"></video>`
+        : `<div class="h-36 flex items-center justify-center text-3xl bg-white/5">📄</div>`;
+      return `<div class="glass rounded-2xl overflow-hidden border border-white/10">
+        ${media}
+        <div class="p-3 space-y-2">
+          <div class="text-xs font-bold truncate">${escapeHtml(c.name)}</div>
+          <div class="text-[10px] text-slate-500">${Math.round((c.size||0)/1024)} KB</div>
+          <a class="block text-center py-2 rounded-xl bg-emerald-600 text-[11px] font-bold no-underline text-white" href="${dl}">Download</a>
+          ${c.video ? `<button type="button" onclick="ytPostClip('${escapeHtml(c.key)}','${escapeHtml(c.name)}')" class="w-full py-2 rounded-xl bg-red-600 text-[11px] font-bold">Post to YouTube</button>
+          <button type="button" onclick="igPostClip('${escapeHtml(c.key)}','${escapeHtml(c.name)}')" class="w-full py-2 rounded-xl bg-pink-600 text-[11px] font-bold">Post to Instagram</button>` : ''}
+        </div>
+      </div>`;
+    }).join('') : '<div class="text-slate-500 text-xs">Empty folder. Drop a clip above.</div>';
+  } catch (e) {
+    if (st) st.textContent = 'Clips folder waits on Worker 4.2.1.';
+  }
+  const drop = document.getElementById('clips-drop');
+  const input = document.getElementById('clips-input');
+  if (drop && !drop.dataset.bound) {
+    drop.dataset.bound = '1';
+    drop.addEventListener('click', () => input && input.click());
+    drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('dragover'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+    drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('dragover'); uploadClipFiles(e.dataTransfer.files); });
+    if (input) input.addEventListener('change', () => uploadClipFiles(input.files));
+  }
+}
+async function uploadClipFiles(fileList) {
+  const files = Array.from(fileList || []);
+  const st = document.getElementById('clips-status');
+  if (!files.length) return;
+  if (st) st.textContent = 'Uploading ' + files.length + '…';
+  for (const f of files) {
+    try {
+      const res = await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/clips', {
+        method: 'POST',
+        headers: { 'Content-Type': f.type || 'video/mp4', 'X-File-Name': f.name, 'X-Title': f.name },
+        body: f,
+      });
+      const d = await res.json();
+      addMia(d.ok ? ('Stored in clips/: ' + d.name) : ('Clip upload failed: ' + (d.error || res.status)));
+    } catch (e) {
+      addMia('Clip upload failed: ' + e.message);
+    }
+  }
+  refreshClips();
+}
+async function miaMakeClip(quality) {
+  const title = (document.getElementById('clip-title')?.value || 'Ash and Altar').trim();
+  const story = (document.getElementById('clip-story')?.value || '').trim();
+  const el = document.getElementById('clip-job');
+  if (el) el.textContent = 'Mia is calling ' + (quality === '4k' ? 'Veo 3.1 4K' : 'Grok Imagine Video 1.5') + '…';
+  addMia('Rendering “' + title + '” at ' + (quality === '4k' ? 'native 4K' : 'magical 1080p') + '. This is Mia, not a side generator.');
+  try {
+    const rec = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/clips/generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, story, quality, duration: quality === '4k' ? 8 : 12 })
+    })).json();
+    if (!rec.ok) {
+      if (el) el.textContent = rec.error || 'failed';
+      addMia('Mia could not render: ' + (rec.error || 'unknown') + '. If it is credits, add balance at console.x.ai (1080p) or Gemini billed Veo (4K).');
+      return;
+    }
+    if (el) el.textContent = rec.message + ' · ' + (rec.note || '');
+    pollClipJob(rec.job_id);
+  } catch (e) {
+    if (el) el.textContent = e.message;
+    addMia('Generate failed: ' + e.message);
+  }
+}
+async function pollClipJob(id) {
+  if (!id) return;
+  const el = document.getElementById('clip-job');
+  for (let i = 0; i < 40; i++) {
+    await new Promise((r) => setTimeout(r, 4000));
+    try {
+      const j = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/clips/jobs/' + id)).json();
+      if (el) el.textContent = (j.status || '…') + (j.error ? ' — ' + j.error : '') + (j.key ? ' · ' + j.key : '');
+      if (j.status === 'done') {
+        addMia('Clip is in the folder: ' + (j.key || id) + '. Download it from Clips.');
+        refreshClips();
+        return;
+      }
+      if (j.status === 'failed') {
+        addMia('Render failed: ' + (j.error || 'unknown'));
+        return;
+      }
+    } catch (e) {}
+  }
+}
+async function checkYt() {
+  const el = document.getElementById('yt-status');
+  const re = document.getElementById('yt-redirect');
+  const a = document.getElementById('yt-connect');
+  try {
+    const d = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/social/youtube/setup')).json();
+    if (re && d.redirect_uri) re.textContent = d.redirect_uri;
+    if (a && d.connect) a.href = d.connect;
+    if (!el) return;
+    if (d.account && d.account.ok) el.textContent = 'Connected ' + (d.account.title || d.account.channel_id);
+    else if (d.app_ready) el.textContent = 'OAuth app ready. Connect the Google account for UC73le_vohvEOka1rjnOh3SQ.';
+    else el.textContent = 'Add YOUTUBE_CLIENT_ID + YOUTUBE_CLIENT_SECRET, paste the redirect URI in Google Cloud, then Connect.';
+  } catch (e) {
+    if (el) el.textContent = 'YouTube route waits on 4.5.0.';
+  }
+}
+function ytPostClip(key, name) {
+  switchTool('editor');
+  const k = document.getElementById('yt-key');
+  const t = document.getElementById('yt-title');
+  if (k) k.value = key;
+  if (t && !t.value) t.value = name.replace(/\.[^.]+$/, '');
+  checkYt();
+}
+async function ytPostNow() {
+  const key = (document.getElementById('yt-key')?.value || '').trim();
+  const title = (document.getElementById('yt-title')?.value || '').trim();
+  const description = (document.getElementById('yt-desc')?.value || '').trim();
+  const privacy = document.getElementById('yt-privacy')?.value || 'unlisted';
+  const el = document.getElementById('yt-job');
+  if (!key || !title) { if (el) el.textContent = 'Need a clip key and a title.'; return; }
+  if (el) el.textContent = 'Uploading to YouTube…';
+  addMia('Uploading “' + title + '” to YouTube (' + privacy + ').');
+  try {
+    const rec = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/social/youtube', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, title, description, privacy })
+    })).json();
+    if (!rec.ok && rec.status !== 'uploading') {
+      if (el) el.textContent = rec.error || 'failed';
+      addMia('YouTube refused: ' + (rec.error || 'unknown'));
+      return;
+    }
+    if (el) el.textContent = rec.message || rec.url || rec.status;
+    if (rec.job_id) pollYtJob(rec.job_id);
+    if (rec.url) addMia('Live: ' + rec.url);
+  } catch (e) {
+    if (el) el.textContent = e.message;
+  }
+}
+async function pollYtJob(id) {
+  const el = document.getElementById('yt-job');
+  for (let i = 0; i < 40; i++) {
+    await new Promise((r) => setTimeout(r, 4000));
+    try {
+      const j = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/social/youtube/jobs/' + id)).json();
+      if (el) el.textContent = (j.status || '') + (j.url ? ' · ' + j.url : '') + (j.error ? ' — ' + j.error : '');
+      if (j.status === 'published') { addMia('YouTube: ' + (j.url || id)); return; }
+      if (j.status === 'failed') { addMia('YouTube failed: ' + (j.error || '')); return; }
+    } catch (e) {}
+  }
+}
+async function checkIg() {
+  const el = document.getElementById('ig-status');
+  const re = document.getElementById('ig-redirect');
+  const a = document.getElementById('ig-connect');
+  try {
+    const d = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/social/instagram/setup')).json();
+    if (re && d.redirect_uri) re.textContent = d.redirect_uri;
+    if (a && d.connect) a.href = d.connect;
+    if (!el) return;
+    if (d.account && d.account.ok) el.textContent = 'Connected @' + (d.account.username || d.account.id);
+    else if (d.app_id_set && d.app_secret_set) el.textContent = 'App ready. Click Connect Instagram.';
+    else el.textContent = 'Add META_APP_ID + META_APP_SECRET on the Worker, paste the redirect URI into Meta, then Connect.';
+  } catch (e) {
+    if (el) el.textContent = 'Setup route not live yet — wait for 4.4.1.';
+  }
+}
+async function igSavePaste() {
+  const token = (document.getElementById('ig-token-paste')?.value || '').trim();
+  const ig_user_id = (document.getElementById('ig-id-paste')?.value || '').trim();
+  const el = document.getElementById('ig-job');
+  try {
+    const d = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/social/instagram/config', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, ig_user_id })
+    })).json();
+    if (el) el.textContent = d.ok ? d.message : (d.error || 'save failed');
+    if (d.ok) checkIg();
+  } catch (e) {
+    if (el) el.textContent = e.message;
+  }
+}
+function igPostClip(key, name) {
+  switchTool('editor');
+  const k = document.getElementById('ig-key');
+  const c = document.getElementById('ig-caption');
+  if (k) k.value = key;
+  if (c && !c.value) c.value = name.replace(/\.[^.]+$/, '') + '\n\n#heymia';
+  checkIg();
+}
+async function igPostNow() {
+  const key = (document.getElementById('ig-key')?.value || '').trim();
+  const caption = (document.getElementById('ig-caption')?.value || '').trim();
+  const el = document.getElementById('ig-job');
+  if (!key && !caption) { if (el) el.textContent = 'Need a clip key and a caption.'; return; }
+  if (el) el.textContent = 'Creating Instagram container…';
+  addMia('Posting to Instagram: ' + (key || 'url') + '.');
+  try {
+    const rec = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/social/instagram', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, caption })
+    })).json();
+    if (!rec.ok) {
+      if (el) el.textContent = rec.error || 'failed';
+      addMia('Instagram refused: ' + (rec.error || 'unknown'));
+      return;
+    }
+    if (el) el.textContent = rec.message;
+    pollIgJob(rec.job_id);
+  } catch (e) {
+    if (el) el.textContent = e.message;
+  }
+}
+async function pollIgJob(id) {
+  if (!id) return;
+  const el = document.getElementById('ig-job');
+  for (let i = 0; i < 30; i++) {
+    await new Promise((r) => setTimeout(r, 4000));
+    try {
+      const j = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/social/instagram/jobs/' + id)).json();
+      if (el) el.textContent = (j.status || '') + (j.container_status ? ' · ' + j.container_status : '') + (j.media_id ? ' · media ' + j.media_id : '') + (j.error ? ' — ' + j.error : '');
+      if (j.status === 'published') {
+        addMia('Posted. Instagram media ' + (j.media_id || id) + '.');
+        return;
+      }
+      if (j.status === 'failed') {
+        addMia('Instagram failed: ' + (j.error || 'unknown'));
+        return;
+      }
+    } catch (e) {}
+  }
+}
+async function downloadAllClips() {
+  const st = document.getElementById('clips-status');
+  try {
+    const d = await (await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/clips')).json();
+    const clips = (d.clips || []).filter((c) => c.video || c.size);
+    if (!clips.length) { addMia('No clips to download yet.'); return; }
+    if (typeof JSZip === 'undefined') { addMia('JSZip missing — download clips one by one.'); return; }
+    if (st) st.textContent = 'Zipping ' + clips.length + '…';
+    const zip = new JSZip();
+    for (const c of clips) {
+      const res = await fetch(clipUrl(c, true));
+      zip.file(c.name, await res.arrayBuffer());
+    }
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'heymia-clips.zip';
+    a.click();
+    if (st) st.textContent = 'Downloaded heymia-clips.zip';
+    addMia('Clips zip downloaded (' + clips.length + ').');
+  } catch (e) {
+    addMia('Zip failed: ' + e.message);
+  }
+}
+
+async function mktList() {
+  const box = document.getElementById('mkt-files');
+  if (!box) return;
+  try {
+    const res = await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/marketing?project=' + encodeURIComponent(state.mktProject));
+    const d = await res.json();
+    const files = (d.files || []).filter((f) => f.key.indexOf('/marketing/' + state.mktKind + '/') > -1);
+    box.innerHTML = files.length ? files.map((f) => `<div class="truncate">${escapeHtml(f.key.split('/').pop())}</div>`).join('') : '<div>Empty — save a script or PNG into ' + state.mktProject + '/' + state.mktKind + '</div>';
+  } catch (e) {
+    box.textContent = 'Folders not on this Worker yet.';
+  }
+}
+
+async function mktWriteScript() {
+  const brief = (document.getElementById('mkt-brief').value || '').trim() || ('15s marketing clip for ' + state.mktProject);
+  document.getElementById('mkt-status').textContent = 'Mia writing…';
+  const prompt = 'Write a 15-second marketing SCRIPT and on-screen CAPTIONS for product ' + state.mktProject + ' as a ' + state.mktKind + '. Brief: ' + brief + '. Format:\nHOOK:\nSCRIPT:\nCAPTIONS:\nCTA:\nThen tell me which CapCut free tool to open.';
+  try {
+    const res = await fetch(WORKER_BASE.replace(/\/$/, '') + '/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ message: prompt, messages:[{role:'user', content: prompt}], agent:'Mia', mode:'work' }) });
+    const d = await res.json();
+    document.getElementById('mkt-script').value = d.reply || d.response || '';
+    document.getElementById('mkt-status').textContent = 'Script ready. Save it, then open CapCut TTS / captions.';
+  } catch (e) {
+    document.getElementById('mkt-status').textContent = String(e.message || e);
+  }
+}
+
+async function mktSaveScript() {
+  const text = document.getElementById('mkt-script').value || '';
+  if (!text.trim()) return;
+  const name = 'script-' + Date.now() + '.txt';
+  const kind = (state.mktKind === 'posts' || state.mktKind === 'clips' || state.mktKind === 'videos' || state.mktKind === 'ads' || state.mktKind === 'stories') ? 'scripts' : state.mktKind;
+  const res = await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/marketing', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ project: state.mktProject, kind, name, content: text, type: 'text/plain;charset=UTF-8' }) });
+  const d = await res.json();
+  document.getElementById('mkt-status').textContent = d.ok ? 'Saved ' + d.key : (d.error || 'save failed');
+  addMia(d.ok ? 'Filed script into ' + d.key : 'Save failed');
+  mktList();
+}
+
+function mktDrawPost() {
+  const c = document.getElementById('mkt-canvas');
+  const ctx = c.getContext('2d');
+  const w = c.width, h = c.height;
+  const g = ctx.createLinearGradient(0,0,w,h);
+  g.addColorStop(0,'#2e1065'); g.addColorStop(1,'#9d174d');
+  ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+  const p = PRODUCTS_UI.find((x) => x.slug === state.mktProject);
+  const script = (document.getElementById('mkt-script').value || '').split('\n').filter(Boolean);
+  const hook = (script.find((l) => /^HOOK/i.test(l)) || script[0] || (p && p.name) || 'HeyMia').replace(/^HOOK:\s*/i,'');
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 72px Plus Jakarta Sans, sans-serif';
+  wrapCanvasText(ctx, hook.slice(0, 90), 80, 280, w - 160, 84);
+  ctx.font = '32px Plus Jakarta Sans, sans-serif';
+  ctx.fillStyle = '#f9a8d4';
+  ctx.fillText((p && p.name) || state.mktProject, 80, h - 140);
+  ctx.fillStyle = '#fff';
+  ctx.font = '28px Plus Jakarta Sans, sans-serif';
+  const url = (p && p.urls && p.urls[0]) ? p.urls[0].replace(/^https?:\/\//,'') : 'heymia.lensflow.au';
+  ctx.fillText(url, 80, h - 90);
+}
+
+function wrapCanvasText(ctx, text, x, y, maxW, lh) {
+  const words = String(text).split(' ');
+  let line = '', yy = y;
+  for (const w of words) {
+    const test = line + w + ' ';
+    if (ctx.measureText(test).width > maxW) { ctx.fillText(line, x, yy); line = w + ' '; yy += lh; }
+    else line = test;
+  }
+  ctx.fillText(line, x, yy);
+}
+
+async function mktSavePost() {
+  mktDrawPost();
+  const c = document.getElementById('mkt-canvas');
+  const data = c.toDataURL('image/png');
+  const name = 'post-' + Date.now() + '.png';
+  const res = await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/marketing', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ project: state.mktProject, kind: 'posts', name, content: data, type: 'image/png' }) });
+  const d = await res.json();
+  document.getElementById('mkt-status').textContent = d.ok ? 'Saved ' + d.key : (d.error || 'save failed');
+  addMia(d.ok ? 'Post still filed in ' + d.key : 'PNG save failed');
+  mktList();
 }
 
 // ========== CAPCUT EDITOR ==========
@@ -2217,7 +3369,7 @@ function showPhoneLink() {
     preview: () => document.getElementById('vault-preview'),
   };
   document.querySelectorAll('.resize-handle').forEach(h => {
-    h.addEventListener('mousedown', e => {
+    h.addEventListener('pointerdown', e => {
       const key = h.getAttribute('data-resize');
       const el = targets[key]?.();
       if (!el) return;
@@ -2225,16 +3377,17 @@ function showPhoneLink() {
       startX = e.clientX;
       startW = el.getBoundingClientRect().width;
       h.classList.add('dragging');
+      h.setPointerCapture(e.pointerId);
       e.preventDefault();
     });
   });
-  window.addEventListener('mousemove', e => {
+  window.addEventListener('pointermove', e => {
     if (!active) return;
     const dx = (e.clientX - startX) * active.dir;
-    const w = Math.min(Math.max(startW + dx, 140), window.innerWidth * 0.55);
+    const w = Math.min(Math.max(startW + dx, 160), window.innerWidth * 0.55);
     active.el.style.width = w + 'px';
   });
-  window.addEventListener('mouseup', () => {
+  window.addEventListener('pointerup', () => {
     if (!active) return;
     active.handle.classList.remove('dragging');
     try {
@@ -2246,7 +3399,10 @@ function showPhoneLink() {
   ['mia','cats','preview'].forEach(k => {
     const w = localStorage.getItem('heymia_w_' + k);
     const el = targets[k]?.();
-    if (w && el) el.style.width = w;
+    if (w && el) {
+      const n = parseFloat(w);
+      if (n >= 160) el.style.width = w;
+    }
   });
 })();
 
@@ -2265,6 +3421,7 @@ async function loadCloudVault() {
       const name = (o.customMetadata && o.customMetadata.originalName) || o.key.split('/').pop();
         const ctype = (o.httpMetadata && o.httpMetadata.contentType) || 'application/octet-stream';
         const cat = (o.customMetadata && o.customMetadata.category) || overrides[o.key] || guessCatFromCloud(name, ctype);
+        const project = o.project || (o.key || '').split('/')[1];
       state.files.push({
         id: 'r2-' + o.key,
         key: o.key,
@@ -2272,6 +3429,7 @@ async function loadCloudVault() {
         type: ctype,
         size: o.size || 0,
         category: cat,
+        project,
         url: WORKER_BASE.replace(/\/$/, '') + '/files?key=' + encodeURIComponent(o.key),
         status: 'cloud',
       });
@@ -2427,6 +3585,7 @@ const MIA_MODES = {
   plain: 'Mode PLAIN: clear, direct, no fluff, not rude. Short practical answers.',
   soft: 'Mode SOFT: warm, conversational, patient. You may use a gentle line of small talk. Still helpful.',
   build: 'Mode BUILD: technical and structured. Prefer steps, checklists, file names, commands. No emotional filler.',
+  grok: 'Mode GROK: xAI Grok-4.5 troubleshoots the Worker, vault, deploy, DNS, and this UI. Short numbered fixes.',
 };
 
 function setMiaMode(mode, silent) {
@@ -2494,15 +3653,13 @@ function buildMiaSystem() {
     : 'No special skills flagged.';
   const know = (state.knowledge || []).slice(0, 12).map(k => '- ' + k.text).join('\n');
   const train = (state.trainingNotes || []).slice(0, 8).map(k => '- ' + k.text).join('\n');
-  return `You are Mia, ops agent for HeyMia (heymia.lensflow.au).
+  return `You are Mia. Talk like a real colleague. First sentence: show you heard THIS message. No filler (Great question, I hear you, I'd be happy to).
 ${mode}
 ${skillLine}
-Knowledge base:
-${know || '- (empty)'}
-Training notes:
-${train || '- (empty)'}
-Vault files right now: ${(state.files || []).length}.
-Keep answers useful. Do not invent secrets or payment facts.`;
+Notes you were trained on:
+${train || '- (none)'}
+${know ? 'Knowledge:\n'+know : ''}
+Do not invent secrets.`;
 }
 
 // init mode/skill UI after load
@@ -2550,7 +3707,7 @@ async function uiStatus() {
   try {
     const res = await fetch(WORKER_BASE.replace(/\/$/, '') + '/ui/status');
     const data = await res.json();
-    addMia('UI status: work=' + data.workActive + ' play=' + data.playActive);
+    addMia('UI status: work=' + (data.workActive || (data.work && data.work.active)) + ' play=' + (data.playActive || (data.play && data.play.active)));
     if (typeof shellPrint === 'function') shellPrint(JSON.stringify(data, null, 2));
     return data;
   } catch (e) {
@@ -3270,6 +4427,62 @@ async function helpSend() {
   }
 }
 
+
+async function loadMiaHistory() {
+  try {
+    const local = JSON.parse(localStorage.getItem('heymia_chat') || '[]');
+    if (Array.isArray(local) && local.length) state.miaTurns = local.slice(-80);
+  } catch (e) {}
+  try {
+    const res = await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/history?limit=80');
+    if (res.ok) {
+      const d = await res.json();
+      if (d.turns && d.turns.length) state.miaTurns = d.turns.map(t => ({ role: t.role, content: t.content }));
+    }
+  } catch (e) {}
+  const box = document.getElementById('mia-chat');
+  if (state.miaTurns && state.miaTurns.length && box) {
+    box.innerHTML = '';
+    state.miaTurns.slice(-40).forEach(t => addMia(t.content, t.role === 'user' ? 'user' : 'mia'));
+  } else {
+    addMia("I'm here. I keep a year of this chat. What's on your mind?");
+  }
+}
+function persistMiaTurns() {
+  try { localStorage.setItem('heymia_chat', JSON.stringify((state.miaTurns || []).slice(-200))); } catch (e) {}
+  try {
+    fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agent: 'Mia', turns: (state.miaTurns || []).slice(-6) }),
+    });
+  } catch (e) {}
+}
+function openCut(key, name) {
+  const q = new URLSearchParams();
+  q.set('embed', '1');
+  if (key) q.set('key', key);
+  if (name) q.set('name', name);
+  const frame = document.getElementById('cut-frame');
+  if (frame) frame.src = '/edit.html?' + q.toString();
+  switchTool('cut');
+}
+async function convertMp4Now(key, name) {
+  if (!key) { addMia('Upload the MP4 to the vault first, then convert.'); return; }
+  addMia('Wrapping “' + name + '” into an HTML page…');
+  try {
+    const res = await fetch((WORKER_BASE || location.origin).replace(/\/$/, '') + '/api/clip', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: key, name: name, title: String(name||'clip').replace(/\\.mp4$/i,'') })
+    });
+    const d = await res.json();
+    if (d.ok && d.url) {
+      addMia('Clip is a page: ' + d.url);
+      showDeployResult({ ok: true, name: d.slug || name, url: d.url, at: new Date().toISOString() });
+    } else addMia('Convert failed: ' + (d.error || 'unknown'));
+  } catch (e) { addMia('Convert failed: ' + (e.message || e)); }
+}
+
 const MEMORY_FILE = 'heymia-memory.json';
 function memStatus(msg) { const el = document.getElementById('memory-status'); if (el) el.textContent = msg; }
 async function importMemoryFiles(files) {
@@ -3353,7 +4566,50 @@ async function refreshBuildBadge() {
 }
 function openPublish() {
   try { switchTool('deploy'); } catch (e) {}
-  try { renderPublish(); } catch (e) {}
+  try { refreshDeployBoard(); } catch (e) { try { renderPublish(); } catch (err) {} }
+}
+function paintDockShip() {
+  const el = document.getElementById('dock-ship');
+  if (!el) return;
+  fetch(WORKER_BASE.replace(/\/$/, '') + '/api/status').then((r) => r.json()).then((st) => {
+    const last = st.last_deploy || {};
+    el.innerHTML = escapeHtml(st.version || 'worker') +
+      (last.name ? ' · ' + escapeHtml(last.name) : '') +
+      (last.at ? '<br>' + escapeHtml(fmtWhen(last.at)) : '');
+  }).catch(() => { el.textContent = 'Worker offline'; });
+}
+function cardHtml(k, v, sub) {
+  return '<div class="glass rounded-2xl p-4 border border-white/10 min-w-0">' +
+    '<div class="text-[10px] uppercase tracking-wider text-slate-500">' + escapeHtml(k) + '</div>' +
+    '<div class="text-sm font-bold mt-1 truncate">' + v + '</div>' +
+    (sub ? '<div class="text-[10px] text-slate-400 mt-1">' + sub + '</div>' : '') +
+    '</div>';
+}
+function refreshDeployBoard() {
+  renderDeploy();
+  renderPublish();
+  fillDeployCards();
+}
+async function fillDeployCards() {
+  const box = document.getElementById('deploy-cards');
+  if (!box) return;
+  box.innerHTML = cardHtml('Worker', '…', 'checking') + cardHtml('Last ship', '…', '') + cardHtml('Vault', '…', '') + cardHtml('AI', '…', '');
+  try {
+    const st = await (await fetch(WORKER_BASE.replace(/\/$/, '') + '/api/status')).json();
+    const last = st.last_deploy || {};
+    const when = last.at ? fmtWhen(last.at) : 'no ship yet';
+    const lastName = escapeHtml(last.name || last.action || 'git');
+    const lastUrl = last.url ? '<a class="underline text-pink-300" href="' + last.url + '" target="_blank" rel="noopener">open</a>' : '';
+    box.innerHTML =
+      cardHtml('Worker', escapeHtml(st.version || '—'), escapeHtml(st.service || 'heymia')) +
+      cardHtml('Last ship', lastName, when + (lastUrl ? ' · ' + lastUrl : '')) +
+      cardHtml('Vault', escapeHtml(st.vault || '—'), st.ok ? 'bound' : 'check binding') +
+      cardHtml('AI', escapeHtml(st.ai_model || '—'),
+        (st.grok === 'set' ? 'Grok on' : 'Grok off') + ' · ' + (st.gemini === 'set' ? 'Gemini on' : 'Gemini off'));
+    updateBuildBadge({ workUploaded: last.at, workActive: true });
+  } catch (e) {
+    box.innerHTML = cardHtml('Worker', 'unreachable', escapeHtml(e.message || 'fetch failed'));
+  }
 }
 async function renderPublish() {
   const statusEl = document.getElementById('publish-status');

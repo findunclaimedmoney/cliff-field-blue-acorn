@@ -16,7 +16,7 @@ Do not dump tool names. Use a tool only when you need vault, files, or save. Aft
 
 Short unless they asked for a script, email, or plan. One clear next step.
 
-Businesses: Sovereign Quant, LensFlow Dating (lensflow.com.au), Missing Cash (missingcash.com.au), Bartermint (bartermint.polsia.app, bartermint.onhercules.app), LensFlow Real Estate. Workshop: heymia.lensflow.au.
+Businesses: Sovereign Quant, LensFlow Dating (lensflow.com.au), Missing Cash (missingcash.com.au), Bartermint (bartermint.polsia.app, bartermint.onhercules.app), LensFlow Real Estate. Workshop: heymia.lensflow.au. You can mint a Pentad, convert an MP4 into an HTML page with convert_mp4, and open the Cut bench (edit_media) so the browser runs FFmpeg.wasm — trim, crop, mute, fade, extract WAV, magic eraser. You keep 12 months of chat and notes. The 7-day camp and Mia OS are stored as procedural memory. When they ask you to CREATE a video, call generate_clip. When they ask you to post to YouTube, call post_youtube first (channel UC73le_vohvEOka1rjnOh3SQ). When they ask Instagram, call post_instagram.
 
 If you do not know, say so. Never invent that a key is set or a file exists.`,
   Jess: "You are Jess, a warm companion in Play mode. Conversational and ready for LiveAvatar. Do not invent business facts.",
@@ -82,6 +82,66 @@ const TOOLS = [
             category: { type: "STRING" },
           },
           required: ["fileName"],
+        },
+      },
+      {
+        name: "mint_pentad",
+        description: "Mint a Pentad: a five-dimensional living frame (plane, depth, time, tone, citation field) with llms.txt so answer engines can quote it.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            name: { type: "STRING" },
+            claim: { type: "STRING", description: "One-line meaning of the frame" },
+            quote: { type: "STRING", description: "The exact sentence engines should cite" },
+          },
+          required: ["name", "claim"],
+        },
+      },
+      {
+        name: "convert_mp4",
+        description: "Turn an MP4 in the vault into a live HTML video page at /s/{slug}/ with player, embed code, and llms.txt.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            key: { type: "STRING", description: "Vault key of the MP4, e.g. files/clip.mp4" },
+            name: { type: "STRING" },
+            title: { type: "STRING" },
+            caption: { type: "STRING" },
+          },
+          required: ["key"],
+        },
+      },
+      {
+        name: "edit_media",
+        description: "Open the Cut bench recipe for a vault video/audio/image. Actual FFmpeg runs in the browser (ffmpeg.wasm). Use for trim, crop, mute, volume, speed, rotate, fade, extract audio, magic eraser.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            key: { type: "STRING", description: "Vault key, e.g. files/clip.mp4" },
+            name: { type: "STRING" },
+            trim_start: { type: "NUMBER" },
+            trim_end: { type: "NUMBER" },
+            crop: { type: "STRING", description: "w:h:x:y" },
+            rotate: { type: "NUMBER", description: "0 90 180 270" },
+            flip: { type: "STRING", description: "h | v | hv" },
+            speed: { type: "NUMBER" },
+            volume: { type: "NUMBER" },
+            mute: { type: "BOOLEAN" },
+            fade_in: { type: "NUMBER" },
+            fade_out: { type: "NUMBER" },
+            extract_audio: { type: "BOOLEAN" },
+            caption: { type: "STRING" },
+          },
+          required: ["key"],
+        },
+      },
+      {
+        name: "year_memory",
+        description: "Search Mia's 12-month memory (chat + saved notes).",
+        parameters: {
+          type: "OBJECT",
+          properties: { query: { type: "STRING" }, q: { type: "STRING" } },
+          required: [],
         },
       },
       {
@@ -199,6 +259,79 @@ const TOOLS = [
       {
         name: "deploy_status",
         description: "Last deploy result plus worker/vault/AI status.",
+        parameters: { type: "OBJECT", properties: {}, required: [] },
+      },
+      {
+        name: "create_movie",
+        description: "Write a full 30-minute (or custom runtime) movie bible: logline, 3 acts, scenes, 6 locked shot prompts per scene, viral YouTube pack, ffmpeg concat list. Saves under movies/{slug}/.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            title: { type: "STRING" },
+            premise: { type: "STRING" },
+            brief: { type: "STRING" },
+            genre: { type: "STRING" },
+            vibe: { type: "STRING" },
+            runtime: { type: "NUMBER", description: "Minutes, default 30" },
+            hero: { type: "STRING" },
+            want: { type: "STRING" },
+          },
+          required: ["title"],
+        },
+      },
+      {
+        name: "post_youtube",
+        description: "Upload a vault clip to YouTube channel UC73le_vohvEOka1rjnOh3SQ. Needs YouTube OAuth connected. Pass key (clips/…), title, description, privacy (unlisted|public|private).",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            key: { type: "STRING" },
+            url: { type: "STRING" },
+            title: { type: "STRING" },
+            description: { type: "STRING" },
+            caption: { type: "STRING" },
+            privacy: { type: "STRING" },
+          },
+          required: ["title"],
+        },
+      },
+      {
+        name: "post_instagram",
+        description: "Publish a photo or reel to the connected Instagram professional account. Needs META_PAGE_TOKEN and IG_USER_ID. Pass vault key of a clip (clips/…) or a public https URL, plus caption. Reels use media_type REELS. She actually presses Post — not a share link.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            key: { type: "STRING", description: "Vault key e.g. clips/ash-and-altar.mp4" },
+            url: { type: "STRING" },
+            caption: { type: "STRING" },
+            type: { type: "STRING", description: "REELS or IMAGE" },
+          },
+          required: ["caption"],
+        },
+      },
+      {
+        name: "generate_clip",
+        description: "Mia renders a short film clip with Grok Imagine Video 1.5 (magical 1080p, up to 15s) or Gemini Veo 3.1 (native 4K, 8s). Saves into clips/ for playback and download. Use this when the user wants YOU to create the video, not just write a bible. quality: 1080p (default) or 4k.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            title: { type: "STRING" },
+            story: { type: "STRING", description: "What happens on screen, including the ending" },
+            prompt: { type: "STRING" },
+            quality: { type: "STRING", description: "1080p or 4k" },
+            duration: { type: "NUMBER" },
+          },
+          required: ["title", "story"],
+        },
+      },
+      {
+        name: "list_clips",
+        description: "List video clips stored in Mia's Clips folder for download.",
+        parameters: { type: "OBJECT", properties: {}, required: [] },
+      },
+      {
+        name: "list_movies",
+        description: "List movie bibles already saved in the vault.",
         parameters: { type: "OBJECT", properties: {}, required: [] },
       },
       {
@@ -371,7 +504,7 @@ export async function handleAgentChat(env, body, helpers) {
       ? [{ role: "user", content: String(body.message) }]
       : [];
   const agent = body.agent || (body.companion === "jess" || body.companion === "Jess" ? "Jess" : "Mia");
-  const system = getSystemPrompt(agent === "jess" || agent === "Jess" ? "Jess" : "Mia");
+  const system = getSystemPrompt(agent === "jess" || agent === "Jess" ? "Jess" : "Mia") + (body.yearMemory || "");
   let filesNote = "";
   const lastUser = String(messages.filter((m) => m.role !== "assistant").at(-1)?.content || "");
   if (/\b(file|vault|folder|project|upload)\b/i.test(lastUser)) {

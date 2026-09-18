@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EditRouteImport } from './routes/edit'
 import { Route as WorkRouteImport } from './routes/work'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiGrokRouteImport } from './routes/api/grok'
@@ -17,6 +18,11 @@ import { Route as ApiGrokRouteImport } from './routes/api/grok'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EditRoute = EditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkRoute = WorkRouteImport.update({
@@ -37,12 +43,14 @@ const ApiGrokRoute = ApiGrokRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/edit': typeof EditRoute
   '/work': typeof WorkRoute
   '/api/chat': typeof ApiChatRoute
   '/api/grok': typeof ApiGrokRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/edit': typeof EditRoute
   '/work': typeof WorkRoute
   '/api/chat': typeof ApiChatRoute
   '/api/grok': typeof ApiGrokRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/edit': typeof EditRoute
   '/work': typeof WorkRoute
   '/api/chat': typeof ApiChatRoute
   '/api/grok': typeof ApiGrokRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/work' | '/api/chat' | '/api/grok'
+  fullPaths: '/' | '/edit' | '/work' | '/api/chat' | '/api/grok'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/work' | '/api/chat' | '/api/grok'
-  id: '__root__' | '/' | '/work' | '/api/chat' | '/api/grok'
+  to: '/' | '/edit' | '/work' | '/api/chat' | '/api/grok'
+  id: '__root__' | '/' | '/edit' | '/work' | '/api/chat' | '/api/grok'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EditRoute: typeof EditRoute
   WorkRoute: typeof WorkRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiGrokRoute: typeof ApiGrokRoute
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/edit': {
+      id: '/edit'
+      path: '/edit'
+      fullPath: '/edit'
+      preLoaderRoute: typeof EditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/work': {
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EditRoute: EditRoute,
   WorkRoute: WorkRoute,
   ApiChatRoute: ApiChatRoute,
   ApiGrokRoute: ApiGrokRoute,
